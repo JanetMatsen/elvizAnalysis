@@ -60,6 +60,8 @@ def plotClusters(pdf, originalX, title):
         plt.ylabel(clusterColumns[1], fontsize=10)
 
     plt.title(title)
+    plt.axes([originalX[clusterColumns[0]].min(), originalX[clusterColumns[0]].max(),
+            originalX[clusterColumns[1]].min(), originalX[clusterColumns[1]].max()])
     pdf.savefig()
     plt.close()
 
