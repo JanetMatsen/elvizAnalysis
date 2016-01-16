@@ -12,7 +12,9 @@ from sklearn import metrics
 from sklearn.datasets.samples_generator import make_blobs
 from sklearn.preprocessing import StandardScaler
 
-minRows = 10
+MIN_ROWS = 20
+DENSITY = 0.4
+MIN_SAMPLES = 10
 
 sns.set(style="whitegrid")
 
@@ -63,18 +65,21 @@ with PdfPages('elvizCluster.pdf') as pdf:
     for key in dfgb.indices.keys():
         idx = dfgb.indices[key]
         taxRows = df.iloc[idx]
-        if len(taxRows) < minRows:
+        if len(taxRows) < MIN_ROWS:
             continue
         # normalize all dimensions to be used in clustering, e.g. GC, coverage, rpk
         taxRowsClusterColumns = StandardScaler().fit_transform(taxRows[clusterColumns])
 
-        db = DBSCAN(eps=0.3, min_samples=10).fit(taxRowsClusterColumns)
+        db = DBSCAN(eps=DENSITY, min_samples=MIN_SAMPLES).fit(taxRowsClusterColumns)
         core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
         core_samples_mask[db.core_sample_indices_] = True
         labels = db.labels_
 
         # Number of clusters in labels, ignoring noise if present.
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+
+        if n_clusters_ < 1:
+            continue
 
         title = ', '.join(key)
         print(title)
