@@ -32,8 +32,8 @@ df = readElvizCSV("Metagenome_9_HOW4.csv");
 df['reads'] = df['Plus reads'] + df['Minus reads']
 df['rpk'] = df['reads']/(df['Length']/1000)
 
-clusterColumns = ['Reference GC', 'rpk', 'Average fold']
-clusterColumns = ['Reference GC', 'Average fold']
+clusterColumns = ['Average fold', 'Reference GC', 'rpk']
+clusterColumns = ['Average fold', 'Reference GC']
 
 def plotClusters(pdf, X, title):
     # Black removed and is used for noise instead.
