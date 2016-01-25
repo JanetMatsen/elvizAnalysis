@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 import numpy as np
 import os
 import pandas as pd
@@ -13,12 +14,11 @@ from sklearn.datasets.samples_generator import make_blobs
 from sklearn.preprocessing import StandardScaler
 
 MIN_ROWS = 20
-DENSITY = 0.3
+EPS = 0.15
 MIN_SAMPLES = 10
 
 clusterColumns = ['Average fold', 'Reference GC']
 
-s = StandardScaler()
 sns.set(style="whitegrid")
 
 # read in metadata about samples
@@ -30,7 +30,8 @@ def readElvizCSV(filename):
     df.fillna("", inplace=True)
     return df
 
-def plotClusters(pdf, X, title):
+
+def plotClusters(pdf, X, title, labels, core_samples_mask):
     # Black removed and is used for noise instead.
     unique_labels = set(labels)
     colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)), alpha=0.6)
@@ -56,44 +57,67 @@ def plotClusters(pdf, X, title):
     plt.close()
 
 
-# read in all the .csv files and process them
-elviz_files = [f for f in os.listdir("./data/") if ".csv" in f]
-for f in elviz_files:
-    fpdf = f.replace("csv", "pdf")
+elvizData = { }
+def readElvizCSVs(directory):
+    elvizFiles = [filename for filename in os.listdir(directory) if ".csv" in filename]
+    for filename in elvizFiles:
+        # read the dataframe from the csv
+        df = readElvizCSV("./data/" + filename)
+        elvizData[filename] = df
 
-    # skip if the PDF already exists
-    if os.path.isfile("./results/" + fpdf):
-        continue
 
-    print("processing file %s" % f)
-    # read the dataframe from the csv
-    df = readElvizCSV("./data/" + f)
+def main():
+    print("reading in all Elviz CSV files")
+    readElvizCSVs("./data/")
+    print("concatenating data frames prior to normalization")
+    # create a combined dataframe from all the CSV files
+    combinedDf = pd.concat(elvizData.values())
+    print("normalizing data prior to clustering")
+    # normalize the combined data to retrieve the normalization parameters
+    scaler = StandardScaler().fit(combinedDf[clusterColumns])
+    print("serially processing files")
+    for filename in elvizData.keys():
+        pdfFilename = filename.replace("csv", "pdf")
+        # skip if the PDF already exists
+        if os.path.isfile("./results/" + pdfFilename):
+            print("skiping file %s" % filename)
+            continue
+        print("processing file %s" % filename)
 
-    # create a multiage PDF for storing the plots
-    with PdfPages('./results/' + fpdf) as pdf:
-        # find unique values of taxonomy columns
-        dfgb = df.groupby(['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'])
-        for key in dfgb.indices.keys():
-            idx = dfgb.indices[key]
-            taxRows = df.iloc[idx]
-            if len(taxRows) < MIN_ROWS:
-                continue
-            # normalize all dimensions to be used in clustering, e.g. GC, coverage, rpk
-            taxRowsClusterColumns = s.fit_transform(taxRows[clusterColumns])
+        df = elvizData[filename]
 
-            db = DBSCAN(eps=DENSITY, min_samples=MIN_SAMPLES).fit(taxRowsClusterColumns)
-            core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-            core_samples_mask[db.core_sample_indices_] = True
-            labels = db.labels_
+        # create a multiage PDF for storing the plots
+        with PdfPages('./results/' + pdfFilename) as pdf:
+            # find unique values of taxonomy columns
+            dfgb = df.groupby(['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'])
+            for key in dfgb.indices.keys():
+                idx = dfgb.indices[key]
+                taxRows = df.iloc[idx]
+                if len(taxRows) < MIN_ROWS:
+                    continue
+                # normalize all dimensions to be used in clustering, e.g. GC, coverage, rpk
+                # reuse the scaler we created from all of the data for the transform
+                taxRowsClusterColumns = scaler.transform(taxRows[clusterColumns])
 
-            # number of clusters in labels, ignoring noise if present.
-            n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+                db = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES).fit(taxRowsClusterColumns)
+                core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+                core_samples_mask[db.core_sample_indices_] = True
+                labels = db.labels_
 
-            if n_clusters_ < 1:
-                continue
+                # number of clusters in labels, ignoring noise if present.
+                n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
 
-            title = ', '.join(key)
-            #print(title)
-            #print('Estimated number of clusters: %d' % n_clusters_)
-            plotClusters(pdf, s.inverse_transform(taxRowsClusterColumns), title)
+                if n_clusters_ < 1:
+                    continue
+
+                title = ', '.join(key)
+                #print(title)
+                #print('Estimated number of clusters: %d' % n_clusters_)
+                plotClusters(pdf, scaler.inverse_transform(taxRowsClusterColumns), title, labels, core_samples_mask)
+
+        sys.exit()
+
+
+if __name__ == "__main__":
+    main()
 
