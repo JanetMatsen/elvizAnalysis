@@ -1,6 +1,7 @@
 #!/bin/bash
 
-TMP=`mktemp`
+TMP=`mktemp /tmp/temp.XXXX`
+echo $TMP
 
 for file in *.csv
 do
