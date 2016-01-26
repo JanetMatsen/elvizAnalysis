@@ -1,4 +1,6 @@
-IMPORT_DATA_TYPES = {'datasetId':'int', 
+import math
+
+IMPORT_DATA_TYPES = {'datasetId':'str', 
                  'contigId':'str', 
                 'Average fold':'float',
                 'Length':'int', 
@@ -19,3 +21,46 @@ IMPORT_DATA_TYPES = {'datasetId':'int',
                 'Genus':'str',
                 'Species':'str'
                 }
+
+
+def read_elviz_CSV(filename):
+    df = pd.read_csv(filename, sep=",", dtype=IMPORT_DATA_TYPES)
+    # repalce nans with ""
+    df.fillna("", inplace=True)
+    return df
+
+
+def read_elviz_CSVs(directory):
+    elviz_data = { }
+    elviz_files = [filename for filename in os.listdir(directory) if ".csv" in filename]
+    for filename in elviz_files:
+        print(filename)
+        # read the dataframe from the csv
+        df = read_elviz_CSV("./data/" + filename)
+        df['Log10 Average fold'] = math.log(df['Average fold'], 10)
+        elviz_data[filename] = df
+    return elviz_data
+
+def read_pickle_or_CSVs(pickle_filename, CSV_directory):
+    # if the pickle data file exists containing the individual data frames
+    # in a list and the combined dataframe then skip loading the CSVs 
+    # individually and load the pickle
+    if os.path.isfile(DATA_PICKLE):
+        print("reading %s for previously parsed data" % DATA_PICKLE)
+        with open(DATA_PICKLE, 'rb') as file:
+            elviz_data = pickle.load(file)
+            combined_df = pickle.load(file)
+    else:
+        # OK, no pickle found, do it the hard way
+        print("reading in all Elviz CSV files")
+        elviz_data = read_elviz_CSVs("./data/")
+        # assemble the uber frame
+        print("concatenating data frames prior to normalization")
+        # create a combined dataframe from all the CSV files
+        combined_df = pd.concat(elviz_data.values())
+        # save the two new objects to a pickle for future use
+        with open(DATA_PICKLE, 'wb') as file:
+            pickle.dump(elviz_data, file, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(combined_df, file, pickle.HIGHEST_PROTOCOL)
+
+    return [elviz_data, combined_df]
