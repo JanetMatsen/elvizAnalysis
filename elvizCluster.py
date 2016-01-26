@@ -15,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 
 MIN_ROWS = 20
 EPS = 0.15
-MIN_SAMPLES = 10
+MIN_SAMPLES = MIN_ROWS
 
 clusterColumns = ['Average fold', 'Reference GC']
 
@@ -31,7 +31,7 @@ def readElvizCSV(filename):
     return df
 
 
-def plotClusters(pdf, X, title, labels, core_samples_mask):
+def plotClusters(pdf, X, title, labels, core_samples_mask, limits):
     # Black removed and is used for noise instead.
     unique_labels = set(labels)
     colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)), alpha=0.6)
@@ -53,6 +53,8 @@ def plotClusters(pdf, X, title, labels, core_samples_mask):
     plt.title(title)
     plt.xlabel(clusterColumns[0], fontsize=10)
     plt.ylabel(clusterColumns[1], fontsize=10)
+    plt.xlim(limits["x"])
+    plt.ylim(limits["y"])
     pdf.savefig()
     plt.close()
 
@@ -72,6 +74,10 @@ def main():
     print("concatenating data frames prior to normalization")
     # create a combined dataframe from all the CSV files
     combinedDf = pd.concat(elvizData.values())
+    limits = { }
+    limits["x"] = [combinedDf['Average fold'].min(), combinedDf['Average fold'].max()]
+    limits["x"] = [combinedDf['Average fold'].min(), 500]
+    limits["y"] = [combinedDf['Reference GC'].min(), combinedDf['Reference GC'].max()]
     print("normalizing data prior to clustering")
     # normalize the combined data to retrieve the normalization parameters
     scaler = StandardScaler().fit(combinedDf[clusterColumns])
@@ -113,7 +119,7 @@ def main():
                 title = ', '.join(key)
                 #print(title)
                 #print('Estimated number of clusters: %d' % n_clusters_)
-                plotClusters(pdf, scaler.inverse_transform(taxRowsClusterColumns), title, labels, core_samples_mask)
+                plotClusters(pdf, scaler.inverse_transform(taxRowsClusterColumns), title, labels, core_samples_mask, limits)
 
         sys.exit()
 
