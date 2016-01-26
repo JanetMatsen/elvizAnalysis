@@ -6,6 +6,7 @@ import pandas as pd
 import re
 import seaborn as sns
 import matplotlib.pyplot as plt
+import pickle
 from matplotlib.backends.backend_pdf import PdfPages
 
 from sklearn.cluster import DBSCAN
@@ -16,6 +17,8 @@ from sklearn.preprocessing import StandardScaler
 MIN_ROWS = 20
 EPS = 0.15
 MIN_SAMPLES = MIN_ROWS
+MAX_AVG_FOLD = 500 # I've seen over 20k, 500 seems to be 2x typical
+DATA_PICKLE = 'data.pkl' # filename of previously parsed data
 
 clusterColumns = ['Average fold', 'Reference GC']
 
@@ -42,14 +45,17 @@ def plotClusters(pdf, X, title, labels, core_samples_mask, limits):
 
         class_member_mask = (labels == k)
 
+        # plot the core samples
         xy = X[class_member_mask & core_samples_mask]
         plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
              markeredgecolor='k', markersize=6)
 
+        # plot those joined by extension
         xy = X[class_member_mask & ~core_samples_mask]
         plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
              markeredgecolor='k', markersize=3)
 
+    # format the plot
     plt.title(title)
     plt.xlabel(clusterColumns[0], fontsize=10)
     plt.ylabel(clusterColumns[1], fontsize=10)
@@ -59,28 +65,52 @@ def plotClusters(pdf, X, title, labels, core_samples_mask, limits):
     plt.close()
 
 
-elvizData = { }
 def readElvizCSVs(directory):
+    elvizData = { }
     elvizFiles = [filename for filename in os.listdir(directory) if ".csv" in filename]
     for filename in elvizFiles:
         # read the dataframe from the csv
         df = readElvizCSV("./data/" + filename)
         elvizData[filename] = df
+    return elvizData
 
 
 def main():
-    print("reading in all Elviz CSV files")
-    readElvizCSVs("./data/")
-    print("concatenating data frames prior to normalization")
-    # create a combined dataframe from all the CSV files
-    combinedDf = pd.concat(elvizData.values())
+    # if the pickle data file exists containing the individual data frames
+    # in a list and the combined dataframe then skip loading the CSVs 
+    # individually and load the pickle
+    if os.path.isfile(DATA_PICKLE):
+        print("reading %s for previously parsed data" % DATA_PICKLE)
+        with open(DATA_PICKLE, 'rb') as file:
+            elvizData = pickle.load(file)
+            combinedDf = pickle.load(file)
+    else:
+        # OK, no pickle found, do it the hard way
+        print("reading in all Elviz CSV files")
+        elvizData = readElvizCSVs("./data/")
+        # assemble the uber frame
+        print("concatenating data frames prior to normalization")
+        # create a combined dataframe from all the CSV files
+        combinedDf = pd.concat(elvizData.values())
+        # save the two new objects to a pickle for future use
+        with open(DATA_PICKLE, 'wb') as file:
+            pickle.dump(elvizData, file, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(combinedDf, file, pickle.HIGHEST_PROTOCOL)
+
+    # setup plotting limits
+    print("determining plotting limits")
     limits = { }
-    limits["x"] = [combinedDf['Average fold'].min(), combinedDf['Average fold'].max()]
-    limits["x"] = [combinedDf['Average fold'].min(), 500]
+    # below changed in favor of fixed MAX
+    # limits["x"] = [combinedDf['Average fold'].min(), combinedDf['Average fold'].max()]
+    # fixed MAX below
+    limits["x"] = [combinedDf['Average fold'].min(), MAX_AVG_FOLD]
     limits["y"] = [combinedDf['Reference GC'].min(), combinedDf['Reference GC'].max()]
+
     print("normalizing data prior to clustering")
     # normalize the combined data to retrieve the normalization parameters
     scaler = StandardScaler().fit(combinedDf[clusterColumns])
+    # serializing outputs
+
     print("serially processing files")
     for filename in elvizData.keys():
         pdfFilename = filename.replace("csv", "pdf")
@@ -92,7 +122,7 @@ def main():
 
         df = elvizData[filename]
 
-        # create a multiage PDF for storing the plots
+        # create a multipage PDF for storing the plots
         with PdfPages('./results/' + pdfFilename) as pdf:
             # find unique values of taxonomy columns
             dfgb = df.groupby(['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'])
@@ -119,9 +149,8 @@ def main():
                 title = ', '.join(key)
                 #print(title)
                 #print('Estimated number of clusters: %d' % n_clusters_)
-                plotClusters(pdf, scaler.inverse_transform(taxRowsClusterColumns), title, labels, core_samples_mask, limits)
-
-        sys.exit()
+                plotClusters(pdf, scaler.inverse_transform(taxRowsClusterColumns),
+                        title, labels, core_samples_mask, limits)
 
 
 if __name__ == "__main__":
