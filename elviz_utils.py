@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy
 import os
+import pickle
 
 # Pandas is happy when you tell it the data types 
 # for each column in the raw Elviz .csv files
-IMPORT_DATA_TYPES = {'datasetId':'int', 
+IMPORT_DATA_TYPES = {'datasetId':'str', 
                     'contigId':'str', 
                     'Average fold':'float',
                     'Length':'int', 
