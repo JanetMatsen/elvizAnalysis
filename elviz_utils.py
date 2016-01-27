@@ -1,5 +1,6 @@
 import pandas as pd
-import math
+import numpy
+import os
 
 # Pandas is happy when you tell it the data types 
 # for each column in the raw Elviz .csv files
@@ -48,7 +49,7 @@ def read_elviz_CSVs(directory):
         print(filename)
         # read the dataframe from the csv
         df = read_elviz_CSV("./data/" + filename)
-        df['Log10 Average fold'] = math.log(df['Average fold'], 10)
+        df['Log10 Average fold'] = numpy.log10(df['Average fold'])
         elviz_data[filename] = df
     return elviz_data
 
@@ -56,9 +57,9 @@ def read_pickle_or_CSVs(pickle_filename, CSV_directory):
     # if the pickle data file exists containing the individual data frames
     # in a list and the combined dataframe then skip loading the CSVs 
     # individually and load the pickle
-    if os.path.isfile(DATA_PICKLE):
-        print("reading %s for previously parsed data" % DATA_PICKLE)
-        with open(DATA_PICKLE, 'rb') as file:
+    if os.path.isfile(pickle_filename):
+        print("reading %s for previously parsed data" % pickle_filename)
+        with open(pickle_filename, 'rb') as file:
             elviz_data = pickle.load(file)
             combined_df = pickle.load(file)
     else:
@@ -70,7 +71,7 @@ def read_pickle_or_CSVs(pickle_filename, CSV_directory):
         # create a combined dataframe from all the CSV files
         combined_df = pd.concat(elviz_data.values())
         # save the two new objects to a pickle for future use
-        with open(DATA_PICKLE, 'wb') as file:
+        with open(pickle_filename, 'wb') as file:
             pickle.dump(elviz_data, file, pickle.HIGHEST_PROTOCOL)
             pickle.dump(combined_df, file, pickle.HIGHEST_PROTOCOL)
 
