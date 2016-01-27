@@ -6,7 +6,6 @@ import pandas as pd
 import re
 import seaborn as sns
 import matplotlib.pyplot as plt
-import pickle
 from matplotlib.backends.backend_pdf import PdfPages
 
 from sklearn.cluster import DBSCAN
@@ -14,26 +13,18 @@ from sklearn import metrics
 from sklearn.datasets.samples_generator import make_blobs
 from sklearn.preprocessing import StandardScaler
 
-from elviz_utils import IMPORT_DATA_TYPES
+from elviz_utils import IMPORT_DATA_TYPES, read_elviz_CSV, read_elviz_CSVs, read_pickle_or_CSVs
 
 MIN_ROWS = 20
 EPS = 0.15
 MIN_SAMPLES = MIN_ROWS
 MAX_AVG_FOLD = 500 # I've seen over 20k, 500 seems to be 2x typical
 DATA_PICKLE = 'data.pkl' # filename of previously parsed data
+DATA_DIR = './results'   # location of CSV files
 
-CLUSTER_COLUMNS = ['Average fold', 'Reference GC']
+CLUSTER_COLUMNS = ['Log10 Average fold', 'Reference GC']
 
 sns.set(style="whitegrid")
-
-# read in metadata about samples
-meta_info = pd.read_csv("./data/sample_meta_info.tsv", sep="\t")
-
-def read_elviz_CSV(filename):
-    df = pd.read_csv(filename, sep=",", dtype=IMPORT_DATA_TYPES)
-    # repalce nans with ""
-    df.fillna("", inplace=True)
-    return df
 
 
 def plot_clusters(pdf, X, title, labels, core_samples_mask, limits):
@@ -67,46 +58,17 @@ def plot_clusters(pdf, X, title, labels, core_samples_mask, limits):
     plt.close()
 
 
-def read_elviz_CSVs(directory):
-    elviz_data = { }
-    elviz_files = [filename for filename in os.listdir(directory) if ".csv" in filename]
-    for filename in elviz_files:
-        # read the dataframe from the csv
-        df = read_elviz_CSV("./data/" + filename)
-        elviz_data[filename] = df
-    return elviz_data
-
-
 def main():
-    # if the pickle data file exists containing the individual data frames
-    # in a list and the combined dataframe then skip loading the CSVs 
-    # individually and load the pickle
-    if os.path.isfile(DATA_PICKLE):
-        print("reading %s for previously parsed data" % DATA_PICKLE)
-        with open(DATA_PICKLE, 'rb') as file:
-            elviz_sata = pickle.load(file)
-            combined_df = pickle.load(file)
-    else:
-        # OK, no pickle found, do it the hard way
-        print("reading in all Elviz CSV files")
-        elviz_data = read_elviz_CSVs("./data/")
-        # assemble the uber frame
-        print("concatenating data frames prior to normalization")
-        # create a combined dataframe from all the CSV files
-        combined_df = pd.concat(elviz_data.values())
-        # save the two new objects to a pickle for future use
-        with open(DATA_PICKLE, 'wb') as file:
-            pickle.dump(elviz_data, file, pickle.HIGHEST_PROTOCOL)
-            pickle.dump(combined_df, file, pickle.HIGHEST_PROTOCOL)
+    [ elviz_data, combined_df ] = read_pickle_or_CSVs(DATA_PICKLE, DATA_DIR)
 
     # setup plotting limits
     print("determining plotting limits")
     limits = { }
     # below changed in favor of fixed MAX
-    # limits["x"] = [combinedDf['Average fold'].min(), combinedDf['Average fold'].max()]
+    # limits["x"] = [combined_df['Log10 Average fold'].min(), combined_df['Log10 Average fold'].max()]
     # fixed MAX below
-    limits["x"] = [combinedDf['Average fold'].min(), MAX_AVG_FOLD]
-    limits["y"] = [combinedDf['Reference GC'].min(), combinedDf['Reference GC'].max()]
+    limits["x"] = [combined_df['Log10 Average fold'].min(), MAX_AVG_FOLD]
+    limits["y"] = [combined_df['Reference GC'].min(), combined_df['Reference GC'].max()]
 
     print("normalizing data prior to clustering")
     # normalize the combined data to retrieve the normalization parameters
@@ -151,7 +113,7 @@ def main():
                 title = ', '.join(key)
                 #print(title)
                 #print('Estimated number of clusters: %d' % n_clusters_)
-                plotClusters(pdf, scaler.inverse_transform(tax_rows_cluster_columns),
+                plot_clusters(pdf, scaler.inverse_transform(tax_rows_cluster_columns),
                         title, labels, core_samples_mask, limits)
 
 
