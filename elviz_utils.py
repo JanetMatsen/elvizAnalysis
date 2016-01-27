@@ -32,6 +32,10 @@ IMPORT_METAINFO_TYPES = {'ID':'str',
 
 
 def read_sample_info():
+    ''' 
+    Read in sample_meta_info.tsv using particular dtypes
+    '''
+    print 'testing'
     return pd.read_csv('./data/sample_meta_info.tsv', 
             dtype=IMPORT_METAINFO_TYPES, 
             sep='\t')
