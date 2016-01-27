@@ -32,7 +32,10 @@ IMPORT_METAINFO_TYPES = {'ID':'str',
 
 
 def read_sample_info():
-    return df.read_csv('./data/sample_meta_info.tsv', dtypes=IMPORT_METAINFO_TYPES)
+    return pd.read_csv('./data/sample_meta_info.tsv', 
+            dtype=IMPORT_METAINFO_TYPES, 
+            sep='\t')
+
 
 def read_elviz_CSV(filename):
     df = pd.read_csv(filename, sep=",", dtype=IMPORT_DATA_TYPES)
@@ -41,16 +44,18 @@ def read_elviz_CSV(filename):
     return df
 
 
-def read_elviz_CSVs(directory):
+def read_elviz_CSVs(directory, logfold=True):
     elviz_data = { }
     elviz_files = [filename for filename in os.listdir(directory) if ".csv" in filename]
     for filename in elviz_files:
         print(filename)
         # read the dataframe from the csv
         df = read_elviz_CSV("./data/" + filename)
-        df['Log10 Average fold'] = math.log(df['Average fold'], 10)
+        if logfold:
+            df['Log10 Average fold'] = math.log(df['Average fold'], 10)
         elviz_data[filename] = df
     return elviz_data
+
 
 def read_pickle_or_CSVs(pickle_filename, CSV_directory):
     # if the pickle data file exists containing the individual data frames
@@ -75,3 +80,6 @@ def read_pickle_or_CSVs(pickle_filename, CSV_directory):
             pickle.dump(combined_df, file, pickle.HIGHEST_PROTOCOL)
 
     return [elviz_data, combined_df]
+
+
+
