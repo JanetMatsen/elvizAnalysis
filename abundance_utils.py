@@ -1,8 +1,7 @@
+import os
 import numpy as np
 import numpy as np
 import re
-import pandas as pd
-
 from elviz_utils import IMPORT_DATA_TYPES
 from elviz_utils import IMPORT_METAINFO_TYPES
 
@@ -12,6 +11,11 @@ IMPORT_METAINFO_TYPES = {'ID':'str',
                          'rep':'int',
                          'week':'int',
                          'project':'int'}
+
+
+def make_directory(dirpath):
+    if not os.path.exists(dirpath):
+        os.makedirs(dirpath)
 
 
 def reduce_elviz_to_genus_rpk(df):
@@ -206,3 +210,18 @@ def reduce_to_genus_only(dataframe):
     dataframe_genus.sort_values(by=\
         ['rep', 'abundance'], inplace=True, ascending=False)
     return dataframe_genus
+
+
+def filter_by_abundance(data, column, high, low):
+    '''
+    Return only rows where genera have one value of 
+    abundance in range(low, high)
+    '''
+    species_to_keep = data[(data[column] <= high) &\
+             (data[column] >= low)]['Genus'].unique()
+    print species_to_keep[0:5]# 
+    return data[data['Genus'].isin(species_to_keep)]
+    #return data[data['Genus'] in species_to_keep]
+
+
+
