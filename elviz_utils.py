@@ -77,7 +77,7 @@ def read_pickle_or_CSVs(pickle_filename, CSV_directory):
     else:
         # OK, no pickle found, do it the hard way
         print("reading in all Elviz CSV files")
-        elviz_data = read_elviz_CSVs("./data/")
+        elviz_data = read_elviz_CSVs(DATA_DIR)
         # assemble the uber frame
         print("concatenating data frames prior to normalization")
         # create a combined dataframe from all the CSV files
