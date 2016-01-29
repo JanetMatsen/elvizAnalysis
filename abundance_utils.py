@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import numpy as np
+import pandas as pd
 import re
 from elviz_utils import IMPORT_DATA_TYPES
 from elviz_utils import IMPORT_METAINFO_TYPES
@@ -75,13 +76,13 @@ def read_and_reduce_elviz_csv(filename, filepath, sample_info):
     df = pd.DataFrame(reduce_elviz_to_genus_rpk(df))
 
     # add an ID label.  (don't use 'id'; that is a Python built-in.)
-    df['ID'] = id_from_filename(filename)
-    #df['project'] = project_number_from_filename(filename)
+    #df['ID'] = id_from_filename(filename)
+    df['project'] = project_number_from_filename(filename)
     
-    sample_info.set_index(['ID'])
+    sample_info.set_index(['project'])
     # merge to get sample_info on
     df = pd.merge(df, sample_info, how='left')
-    df = df.groupby('ID').apply(norm_by_ID)
+    df = df.groupby('project').apply(norm_by_ID)
     
     # after norm_by_ID is applied, 'Average fold' is now a pooled number.
     # rename column to abundance since we normalized it. 
@@ -108,13 +109,14 @@ def read_and_reduce_all(filename_list, filepath, sample_info):
         dataframe = dataframe.append(df_to_add)
         print f  # prints filename
 
-    # define a sample name
-    dataframe['sample_name'] = 'replicate '+ \
-        dataframe['rep'].astype(str) +": " + \
-        dataframe['oxy'] + ' O2'
+    # Fix: not specific enough.
+    ## define a sample name
+    #dataframe['sample_name'] = 'replicate '+ \
+    #    dataframe['rep'].astype(str) +": " + \
+    #    dataframe['oxy'] + ' O2'
 
     # make sure all the samples are there
-    if len(dataframe.ID.unique()) != 88:
+    if len(dataframe.project.unique()) != 88:
         print "Warnng!  only {} samples loaded.".format( \
                                     len(dataframe.ID.unique()))
     
@@ -126,12 +128,25 @@ def read_and_reduce_all(filename_list, filepath, sample_info):
     return dataframe
 
 
-def id_from_filename(s):
-    return re.search('[\w]+_[0-9]+_([0-9]+_[HL]OW[0-9]+).csv', s).group(1)
+# No longer works with JGI bulk-provided files!
+#def id_from_filename(s):
+#    return re.search('[\w]+_[0-9]+_([0-9]+_[HL]OW[0-9]+).csv', s).group(1)
 
 
 def project_number_from_filename(s):
-    return re.search('[\w]+_([0-9]+)_[0-9]+_[HL]OW[0-9]+.csv', s).group(1)
+    '''
+    Get the project numer as an integer from JGI-provided data.
+
+    E.g. 'elviz-contigs-1056013.csv' --> 1056013
+    :param s: filename (string) to input
+    :return:
+    '''
+    '''
+    :param s:
+    :return:
+    '''
+    print s
+    return int(re.search('elviz-contigs-([0-9]+).csv', s).group(1))
 
 
 def prepare_excel_dictionary(dataframe):
