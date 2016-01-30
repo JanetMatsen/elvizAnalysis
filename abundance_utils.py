@@ -5,6 +5,7 @@ import pandas as pd
 import re
 from elviz_utils import IMPORT_DATA_TYPES
 from elviz_utils import IMPORT_METAINFO_TYPES
+#from elviz_utils import read_elviz_CSV
 
 
 IMPORT_METAINFO_TYPES = {'ID':'str',
@@ -19,10 +20,30 @@ def make_directory(dirpath):
         os.makedirs(dirpath)
 
 
+def read_elviz_csv(filename, filepath):
+    """
+    Read in a csv from elviz, extract the ID and project number,
+    then reduce to one row per phylogeny.
+    Not using Dave's elviz_utils one b/c I get "usecols" arg in
+    Python 2.7
+    """
+
+    # The first column of some files has funny characters that can
+    # be avoided by skipping import of the 0th column: range(1,20)
+    # see elviz_1056076_32_HOW6.csv":
+    # 'usecols' argument doesn't work in Dave's Python 3!
+    df = pd.read_csv(filepath + '/' + filename, sep=",",
+                    dtype=IMPORT_DATA_TYPES, usecols=range(1,20))
+    df.fillna("", inplace=True)
+
+    return df
+
+
 def reduce_elviz_to_genus_rpk(df):
-    '''
-    Take in a raw elviz DataFrame and return a Pandas array with a sum at the genus level
-    '''
+    """
+    Take in a raw elviz DataFrame and return a Pandas array with a sum
+    of reads per kilobas at the genus level.
+    """
     # get rid of undesired columns because the data is big.
     columns_to_drop = ['datasetId', 'contigId', 
                        'Average fold', 
@@ -35,55 +56,63 @@ def reduce_elviz_to_genus_rpk(df):
             del df[c]
 
     # rename NaN at Genus to "other"  
-    df.Genus.replace(np.nan, "other", inplace=True)
+    df.Genus.replace('', "other", inplace=True)
     
     # calculate RPK: sum the reads that mapped to the plus strand and minus strand
     df['reads per kilobase'] = (df['Plus reads'] + \
                                 df['Minus reads'])/(df['Length']/1000.)
 
-    df = df.groupby(['Kingdom','Phylum','Class','Order','Family','Genus']) \
-                        ['reads per kilobase'].sum().reset_index()
+    # Sum lengths and reads per kilobase.
+    df = df.groupby(['Kingdom','Phylum','Class','Order','Family','Genus'])\
+        ['Length', 'reads per kilobase'].sum()
+
+    # sort to put the highest ones at the top (useful for debugging)
+    df.sort_values(by='reads per kilobase', axis=0,
+                        inplace=True, ascending=False)
 
     # rename our new measure of abundance: 
     df.rename(columns={'reads per kilobase': 'sum of reads per kilobase'}, inplace=True)
-    return df 
+    return df.reset_index()
 
 
 def norm_by_ID(group):
-    ''' 
-    Normalize all the sum of reads per kilobase to 1 for 
-    '''
+    """
+    Normalize all the sum of reads per kilobase to 1 for a given
+    groupy object.
+    """
     fold = group['sum of reads per kilobase']
     group['sum of reads per kilobase'] = fold/sum(fold)
     return group
 
 
 def read_and_reduce_elviz_csv(filename, filepath, sample_info):
-    '''
+    """
     Read in a csv from elviz, extract the ID and project number, 
     then reduce to one row per phylogeny.
-    '''
+    """
 
     # The first column of some files has funny characters that can
     # be avoided by skipping import of the 0th column: range(1,20) 
     # see elviz_1056076_32_HOW6.csv":
-    df = pd.read_csv(filepath + '/' + filename, sep=",", 
-                    dtype=IMPORT_DATA_TYPES, usecols=range(1,20))
+    df = read_elviz_csv(filename=filename, filepath=filepath)
 
     # reduce to one row per genus with reduce_elviz_to_genus_rpk()
     # Need to use DataFrame to convert the seris back to a 
     # dataframe if you want to add an ID column.
     df = pd.DataFrame(reduce_elviz_to_genus_rpk(df))
 
-    # add an ID label.  (don't use 'id'; that is a Python built-in.)
-    #df['ID'] = id_from_filename(filename)
+    # Save the filepath + filename, since we've had trouble with the csv files
+    df['filepath']=filepath + '/' + filename
+
+    # Add a column for the JGI project number.
     df['project'] = project_number_from_filename(filename)
-    
+
     sample_info.set_index(['project'])
     # merge to get sample_info on
-    df = pd.merge(df, sample_info, how='left')
     df = df.groupby('project').apply(norm_by_ID)
-    
+
+    df = pd.merge(df, sample_info, how='left')
+
     # after norm_by_ID is applied, 'Average fold' is now a pooled number.
     # rename column to abundance since we normalized it. 
     df.rename(columns={'sum of reads per kilobase':'abundance'}, inplace=True)
@@ -109,12 +138,6 @@ def read_and_reduce_all(filename_list, filepath, sample_info):
         dataframe = dataframe.append(df_to_add)
         print f  # prints filename
 
-    # Fix: not specific enough.
-    ## define a sample name
-    #dataframe['sample_name'] = 'replicate '+ \
-    #    dataframe['rep'].astype(str) +": " + \
-    #    dataframe['oxy'] + ' O2'
-
     # make sure all the samples are there
     if len(dataframe.project.unique()) != 88:
         print "Warnng!  only {} samples loaded.".format( \
@@ -128,24 +151,15 @@ def read_and_reduce_all(filename_list, filepath, sample_info):
     return dataframe
 
 
-# No longer works with JGI bulk-provided files!
-#def id_from_filename(s):
-#    return re.search('[\w]+_[0-9]+_([0-9]+_[HL]OW[0-9]+).csv', s).group(1)
-
-
 def project_number_from_filename(s):
-    '''
+    """
     Get the project numer as an integer from JGI-provided data.
 
     E.g. 'elviz-contigs-1056013.csv' --> 1056013
     :param s: filename (string) to input
     :return:
-    '''
-    '''
-    :param s:
-    :return:
-    '''
-    print s
+    """
+    #print s
     return int(re.search('elviz-contigs-([0-9]+).csv', s).group(1))
 
 
@@ -163,26 +177,24 @@ def prepare_excel_dictionary(dataframe):
             excel_files[(ox, re)] =  'elviz_binned--{}O2_rep{}.xlsx'.format(ox, re)
     return excel_files
 
+
 def prepare_excel_writer_dict(dataframe, filepath, by_genus=False):
     writer_dict = {}
     for oxy in dataframe['oxy'].unique():
         for rep in dataframe['rep'].unique():
-            #print ox, re
             if by_genus:
                 filename = 'elviz--Genus_only--{}O2_rep_{}.xlsx'.format(oxy, rep)
             else:
                 filename = 'elviz--{}O2_rep_{}.xlsx'.format(oxy, rep)
             filename = filepath + "/" + filename
-            #print filename
             writer_dict[(oxy, rep)] = pd.ExcelWriter(filename, engine='xlsxwriter')
-            #print writer_dict
     return writer_dict
 
 
 def write_excel_files(dataframe, filepath, by_genus=False):
 
-    # Initialize a dictionary of excel filenames using the oxygen and replicate #s
-    #excel_filenames = prepare_excel_dictionary(dataframe = dataframe)
+    # Initialize a dictionary of excel filenames using the oxygen and
+    # replicate #s
 
     # prepare excel_writers for each condition; store in a dictionary. 
     # e.g. {('High', 4): <pandas.io.excel._XlsxWriter object at 0x11291e490>,
@@ -190,10 +202,8 @@ def write_excel_files(dataframe, filepath, by_genus=False):
     writer_dict = prepare_excel_writer_dict(dataframe = dataframe,
                                             filepath=filepath,
                                             by_genus=by_genus)
-    #print 'writer_dict:', 
-    #print writer_dict
 
-    # The groupby returns tuples of the conditions. 
+    # The groupby returns tuples of the conditions.
     by_repl_and_week = dataframe.groupby(['rep','week','oxy'])
 
     # loop over these tuples. 
@@ -202,24 +212,15 @@ def write_excel_files(dataframe, filepath, by_genus=False):
         #print rep, week, oxy
         writer = writer_dict[(oxy, rep)]
         sheet_name = oxy + '_O2' +"_rep_" + str(rep)+"_week_" + str(week)
-        #print sheet_name
         d.reset_index()
-        #print d.columns
-        #del d['index']
-        #print d.columns
         d.to_excel(writer, sheet_name=sheet_name, index=False)
-        #writer.save()
-        #print ""
-    
+
     # close each writer.  This saves them. 
     for w_dict in writer_dict.values():
         w_dict.close()
 
 def reduce_to_genus_only(dataframe):
     dataframe_genus = dataframe.copy()
-    #del dataframe_genus['reads per kilobase']
-    print dataframe_genus.head()
-    print dataframe.columns
     dataframe_genus = dataframe_genus.groupby(['ID','rep',
                 'week','oxy','Genus']).sum().reset_index()
     dataframe_genus.sort_values(by=\
@@ -228,15 +229,14 @@ def reduce_to_genus_only(dataframe):
 
 
 def filter_by_abundance(data, column, high, low):
-    '''
+    """
     Return only rows where genera have one value of 
     abundance in range(low, high)
-    '''
+    """
     species_to_keep = data[(data[column] <= high) &\
              (data[column] >= low)]['Genus'].unique()
     print species_to_keep[0:5]# 
     return data[data['Genus'].isin(species_to_keep)]
-    #return data[data['Genus'] in species_to_keep]
 
 
 
