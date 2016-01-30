@@ -1,4 +1,4 @@
-﻿datasetId,contigId,Average fold,Length,Reference GC,Covered percent,Covered bases,Plus reads,Minus reads,Median fold,Read GC,Complete Lineage,IMG scaffold_oid,Kingdom,Phylum,Class,Order,Family,Genus,Species
+datasetId,contigId,Average fold,Length,Reference GC,Covered percent,Covered bases,Plus reads,Minus reads,Median fold,Read GC,Complete Lineage,IMG scaffold_oid,Kingdom,Phylum,Class,Order,Family,Genus,Species
 0.0,scaffold07650,2.3,409,0.3227,100.0000,409,3,4,2,0.3257,0.0.1.0.3.0.0,Ga0066474_107650,Archaea,Crenarchaeota,Thermoprotei,Sulfolobales,Sulfolobaceae,Acidianus,
 0.0,scaffold10695,2.8,317,0.6088,100.0000,317,3,3,3,0.6100,0.0.2.1.0.0.22,Ga0066474_110695,Archaea,Euryarchaeota,Halobacteria,Halobacteriales,Halobacteriaceae,Halovivax,
 0.0,scaffold10444,3.7,322,0.4379,100.0000,322,4,4,4,0.4495,0.0.2.1.0.0.23,Ga0066474_110444,Archaea,Euryarchaeota,Halobacteria,Halobacteriales,Halobacteriaceae,Natrialba,
