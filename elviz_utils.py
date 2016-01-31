@@ -34,18 +34,14 @@ IMPORT_METAINFO_TYPES = {'ID':'str',
 
 
 def read_sample_info():
-    ''' 
+    '''
     Read in sample_meta_info.tsv using particular dtypes
     '''
-    print('testing')
-    return pd.read_csv('./data/sample_meta_info.tsv', 
-            dtype=IMPORT_METAINFO_TYPES, 
+    return pd.read_csv('./raw_data/sample_meta_info.tsv',
+            dtype=IMPORT_METAINFO_TYPES,
             sep='\t')
 
 
-def read_sample_info():
-    return pd.read_csv('./data/sample_meta_info.tsv', 
-            dtype=IMPORT_METAINFO_TYPES, sep='\t')
 
 def read_elviz_CSV(filename):
     df = pd.read_csv(filename, sep=",", dtype=IMPORT_DATA_TYPES)
