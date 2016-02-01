@@ -67,8 +67,11 @@ def dbscan_heuristic(elviz_data, scaler):
                 all_dists = abs(p1[..., np.newaxis] - p2)
                 # sort along each row
                 all_dists.sort(axis=1)
-                # start at 1 to ignore self-selfA
-                distances.append(all_dists[:, MIN_SAMPLES])
+                # if we don't tolist this, it will save the entire matrix
+                # with a view representation stored in distances, converting
+                # this to a list sidesteps this and the associated memory
+                # problem
+                distances.append(all_dists[:, MIN_SAMPLES].tolist())
         with open(HEURISTIC_PICKLE, 'wb') as file:
             pickle.dump(distances, file, pickle.HIGHEST_PROTOCOL)
 
