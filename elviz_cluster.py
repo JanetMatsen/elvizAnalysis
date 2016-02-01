@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import getopt
 import numpy as np
 import os
 import pandas as pd
@@ -18,7 +19,7 @@ from sklearn.preprocessing import StandardScaler
 from elviz_utils import IMPORT_DATA_TYPES, read_elviz_CSV, read_elviz_CSVs, read_pickle_or_CSVs
 
 MIN_ROWS = 20
-EPS = 0.15
+EPS = 5
 MIN_SAMPLES = 4
 MAX_AVG_FOLD = 500  # I've seen over 20k, 500 seems to be 2x typical
 DATA_PICKLE = 'data.pkl'  # filename of previously parsed data
@@ -57,7 +58,7 @@ def dbscan_heuristic(elviz_data, scaler):
                 #reduced_df = scaler.transform(df[CLUSTER_COLUMNS])
                 reduced_df = pd.DataFrame(scaler.transform(df[CLUSTER_COLUMNS]), columns=CLUSTER_COLUMNS)
                 # create a random sample of the rows
-                random_sample = df.sample(HEURISTIC_SAMPlE_SIZE)
+                random_sample = reduced_df.sample(HEURISTIC_SAMPlE_SIZE)
                 # create array of complex #s using a as first columns and b from second (a + bi)
                 p1 = (random_sample[CLUSTER_COLUMNS[0]] + 1j * random_sample[CLUSTER_COLUMNS[1]]).values
                 p2 = (reduced_df[CLUSTER_COLUMNS[0]] + 1j * reduced_df[CLUSTER_COLUMNS[1]]).values
@@ -119,7 +120,21 @@ def plot_clusters(pdf, df, title, labels, core_samples_mask, limits):
     plt.close()
 
 
-def main():
+def main(argv):
+    heuristic_mode = False
+    try:
+        opts, args = getopt.getopt(argv,"he")
+    except getopt.GetoptError:
+        print('elviz_cluster.py [-h] [-e]')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print('elviz_cluster.py [-h] [-e]')
+            print('  -h = help, -e = run epsilon heuristic plot generation code')
+            sys.exit()
+        elif opt == '-e':
+            heuristic_mode = True
+
     [elviz_data, combined_df] = read_pickle_or_CSVs(DATA_PICKLE, DATA_DIR)
 
     # Setup plotting limits
@@ -135,9 +150,10 @@ def main():
     scaler = StandardScaler().fit(combined_df[CLUSTER_COLUMNS])
     # serializing outputs
 
-    print("making DBSCAN heuristic plots")
-    dbscan_heuristic(elviz_data, scaler)
-    os.sys.exit()
+    if heuristic_mode:
+        print("making DBSCAN heuristic plots")
+        dbscan_heuristic(elviz_data, scaler)
+        os.sys.exit()
 
     print("serially processing files")
     for filename in elviz_data.keys():
@@ -180,4 +196,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
