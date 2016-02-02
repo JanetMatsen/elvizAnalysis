@@ -5,32 +5,32 @@ import pickle
 
 # Pandas is happy when you tell it the data types 
 # for each column in the raw Elviz .csv files
-IMPORT_DATA_TYPES = {'datasetId':'str', 
-                    'contigId':'str', 
-                    'Average fold':'float',
-                    'Length':'int', 
-                    'Reference GC':'float',
-                    'Covered percent':'float', 
-                    'Covered bases':'int', 
-                    'Plus reads':'int', 
-                    'Minus reads':'int',
-                    'Median fold':'float', 
-                    'Read GC':'float', 
-                    'Complete Lineage':'str',
-                    'IMG scaffold_oid':'str',
-                    'Kingdom':'str', 
-                    'Phylum':'str',
-                    'Class':'str', 
-                    'Order':'str', 
-                    'Family':'str', 
-                    'Genus':'str',
-                    'Species':'str'
-                    }
-IMPORT_METAINFO_TYPES = {'ID':'str',
-                         'oxy':'str',
-                         'rep':'int',
-                         'week':'int',
-                         'project':'int'}
+IMPORT_DATA_TYPES = {'datasetId': 'str',
+                     'contigId': 'str',
+                     'Average fold': 'float',
+                     'Length': 'int',
+                     'Reference GC': 'float',
+                     'Covered percent': 'float',
+                     'Covered bases': 'int',
+                     'Plus reads': 'int',
+                     'Minus reads': 'int',
+                     'Median fold': 'float',
+                     'Read GC': 'float',
+                     'Complete Lineage': 'str',
+                     'IMG scaffold_oid': 'str',
+                     'Kingdom': 'str',
+                     'Phylum': 'str',
+                     'Class': 'str',
+                     'Order': 'str',
+                     'Family': 'str',
+                     'Genus': 'str',
+                     'Species': 'str'
+                     }
+IMPORT_METAINFO_TYPES = {'ID': 'str',
+                         'oxy': 'str',
+                         'rep': 'int',
+                         'week': 'int',
+                         'project': 'int'}
 
 
 def read_sample_info():
@@ -38,9 +38,8 @@ def read_sample_info():
     Read in sample_meta_info.tsv using particular dtypes
     '''
     return pd.read_csv('./raw_data/sample_meta_info.tsv',
-            dtype=IMPORT_METAINFO_TYPES,
-            sep='\t')
-
+                       dtype=IMPORT_METAINFO_TYPES,
+                       sep='\t')
 
 
 def read_elviz_CSV(filename):
@@ -51,8 +50,9 @@ def read_elviz_CSV(filename):
 
 
 def read_elviz_CSVs(directory):
-    elviz_data = { }
-    elviz_files = [filename for filename in os.listdir(directory) if ".csv" in filename]
+    elviz_data = {}
+    elviz_files = [filename for filename in os.listdir(directory) if
+                   ".csv" in filename]
     for filename in elviz_files:
         print(filename)
         # read the dataframe from the csv
@@ -60,6 +60,7 @@ def read_elviz_CSVs(directory):
         df['Log10 Average fold'] = numpy.log10(df['Average fold'])
         elviz_data[filename] = df
     return elviz_data
+
 
 def read_pickle_or_CSVs(pickle_filename, CSV_directory):
     # if the pickle data file exists containing the individual data frames
