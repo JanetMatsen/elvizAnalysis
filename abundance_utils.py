@@ -1,11 +1,7 @@
 import os
-import numpy as np
-import numpy as np
 import pandas as pd
 import re
 from elviz_utils import IMPORT_DATA_TYPES
-from elviz_utils import IMPORT_METAINFO_TYPES
-#from elviz_utils import read_elviz_CSV
 
 
 IMPORT_METAINFO_TYPES = {'ID':'str',
