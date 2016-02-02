@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import getopt
 import numpy as np
 import os
 import pandas as pd
@@ -10,7 +11,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 import scipy.spatial.distance
 import pickle
 
-
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
 from sklearn.datasets.samples_generator import make_blobs
@@ -19,13 +19,13 @@ from sklearn.preprocessing import StandardScaler
 from elviz_utils import IMPORT_DATA_TYPES, read_elviz_CSV, read_elviz_CSVs, read_pickle_or_CSVs
 
 MIN_ROWS = 20
-EPS = 0.15
+EPS = 5
 MIN_SAMPLES = 4
-MAX_AVG_FOLD = 500 # I've seen over 20k, 500 seems to be 2x typical
-DATA_PICKLE = 'data.pkl' # filename of previously parsed data
-DATA_DIR = './data/' # location of CSV files
-RESULTS_DIR = './results/'   # location of results output
-HEURISTIC_SAMPlE_SIZE = 100
+MAX_AVG_FOLD = 500  # I've seen over 20k, 500 seems to be 2x typical
+DATA_PICKLE = 'data.pkl'  # filename of previously parsed data
+DATA_DIR = './data/'  # location of CSV files
+RESULTS_DIR = './results/'  # location of results output
+HEURISTIC_SAMPlE_SIZE = 10
 HEURISTIC_PDF = 'heuristic.pdf'
 HEURISTIC_PICKLE = 'heuristic.pkl'
 
@@ -35,17 +35,17 @@ sns.set()
 sns.set(style="whitegrid")
 
 
-def dbscan_heuristic(elviz_data):
-
+def dbscan_heuristic(elviz_data, scaler):
     if os.path.isfile(HEURISTIC_PICKLE):
         print("reading %s for previously computed heuristic data" % HEURISTIC_PICKLE)
         with open(HEURISTIC_PICKLE, 'rb') as file:
-           distances = pickle.load(file)
+            distances = pickle.load(file)
     else:
         print("processing full data set to compute heuristic for epsilon / N")
         distances = []
         for filename in elviz_data.keys():
             print(".", end="")
+            sys.stdout.flush()
             df = elviz_data[filename]
             dfgb = df.groupby(['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus'])
 
@@ -55,9 +55,10 @@ def dbscan_heuristic(elviz_data):
                 if len(tax_rows) < HEURISTIC_SAMPlE_SIZE:
                     continue
                 # select out the columns of relevance
-                reduced_df = df[CLUSTER_COLUMNS]
+                #reduced_df = scaler.transform(df[CLUSTER_COLUMNS])
+                reduced_df = pd.DataFrame(scaler.transform(df[CLUSTER_COLUMNS]), columns=CLUSTER_COLUMNS)
                 # create a random sample of the rows
-                random_sample = df.sample(HEURISTIC_SAMPlE_SIZE)
+                random_sample = reduced_df.sample(HEURISTIC_SAMPlE_SIZE)
                 # create array of complex #s using a as first columns and b from second (a + bi)
                 p1 = (random_sample[CLUSTER_COLUMNS[0]] + 1j * random_sample[CLUSTER_COLUMNS[1]]).values
                 p2 = (reduced_df[CLUSTER_COLUMNS[0]] + 1j * reduced_df[CLUSTER_COLUMNS[1]]).values
@@ -67,21 +68,28 @@ def dbscan_heuristic(elviz_data):
                 all_dists = abs(p1[..., np.newaxis] - p2)
                 # sort along each row
                 all_dists.sort(axis=1)
-                # start at 1 to ignore self-selfA
-                distances.append(all_dists[:, range(1, 10)].flatten())
-                with open(HEURISTIC_PICKLE, 'wb') as file:
-                    pickle.dump(distances, file, pickle.HIGHEST_PROTOCOL)
+                # if we don't tolist this, it will save the entire matrix
+                # with a view representation stored in distances, converting
+                # this to a list sidesteps this and the associated memory
+                # problem
+                distances.append(all_dists[:, MIN_SAMPLES].tolist())
+        with open(HEURISTIC_PICKLE, 'wb') as file:
+            pickle.dump(distances, file, pickle.HIGHEST_PROTOCOL)
 
+    distances = [item for sublist in distances for item in sublist]
     with PdfPages(RESULTS_DIR + HEURISTIC_PDF) as pdf:
         print("\ncomputing histogram and making figure")
-        plt.hist(distances, bins=50)
+        # plt.hist(distances, bins=50, range=(0, 2))
+        distances.sort(reverse=True)
+        plt.plot(distances[0:100])
         plt.title("THIS IS A PLOT TITLE, YOU BET")
-        plt.xlabel("Value")
-        plt.ylabel("Frequency")
+        plt.xlabel("Sorted index")
+        plt.ylabel("k-dist (k = %d)" % MIN_SAMPLES)
         pdf.savefig()
         plt.close()
 
-def plot_clusters(pdf, X, title, labels, core_samples_mask, limits):
+
+def plot_clusters(pdf, df, title, labels, core_samples_mask, limits):
     # Black removed and is used for noise instead.
     unique_labels = set(labels)
     colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)), alpha=0.6)
@@ -93,12 +101,12 @@ def plot_clusters(pdf, X, title, labels, core_samples_mask, limits):
         class_member_mask = (labels == k)
 
         # plot the core samples
-        xy = X[class_member_mask & core_samples_mask]
+        xy = df[class_member_mask & core_samples_mask]
         plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
                  markeredgecolor='k', markersize=6)
 
         # plot those joined by extension
-        xy = X[class_member_mask & ~core_samples_mask]
+        xy = df[class_member_mask & ~core_samples_mask]
         plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
                  markeredgecolor='k', markersize=3)
 
@@ -112,26 +120,40 @@ def plot_clusters(pdf, X, title, labels, core_samples_mask, limits):
     plt.close()
 
 
-def main():
-    [elviz_data, combined_df] = read_pickle_or_CSVs(DATA_PICKLE, DATA_DIR)
+def main(argv):
+    heuristic_mode = False
+    try:
+        opts, args = getopt.getopt(argv,"he")
+    except getopt.GetoptError:
+        print('elviz_cluster.py [-h] [-e]')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print('elviz_cluster.py [-h] [-e]')
+            print('  -h = help, -e = run epsilon heuristic plot generation code')
+            sys.exit()
+        elif opt == '-e':
+            heuristic_mode = True
 
-    print("making DBSCAN heuristic plots")
-    dbscan_heuristic(elviz_data)
-    os.sys.exit()
+    [elviz_data, combined_df] = read_pickle_or_CSVs(DATA_PICKLE, DATA_DIR)
 
     # Setup plotting limits
     print("determining plotting limits")
-    limits = { }
+    limits = {"x": [combined_df['Average fold'].min(), MAX_AVG_FOLD],
+              "y": [combined_df['Reference GC'].min(), combined_df['Reference GC'].max()]}
     # Below changed in favor of fixed MAX
     # limits["x"] = [combined_df['Average fold'].min(), combined_df['Average fold'].max()]
     # fixed MAX below
-    limits["x"] = [combined_df['Average fold'].min(), MAX_AVG_FOLD]
-    limits["y"] = [combined_df['Reference GC'].min(), combined_df['Reference GC'].max()]
 
     print("normalizing data prior to clustering")
     # normalize the combined data to retrieve the normalization parameters
     scaler = StandardScaler().fit(combined_df[CLUSTER_COLUMNS])
     # serializing outputs
+
+    if heuristic_mode:
+        print("making DBSCAN heuristic plots")
+        dbscan_heuristic(elviz_data, scaler)
+        os.sys.exit()
 
     print("serially processing files")
     for filename in elviz_data.keys():
@@ -169,12 +191,9 @@ def main():
                     continue
 
                 title = ', '.join(key)
-                #print(title)
-                #print('Estimated number of clusters: %d' % n_clusters_)
                 plot_clusters(pdf, scaler.inverse_transform(tax_rows_cluster_columns),
-                        title, labels, core_samples_mask, limits)
+                              title, labels, core_samples_mask, limits)
 
 
 if __name__ == "__main__":
-    main()
-
+    main(sys.argv[1:])
