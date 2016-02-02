@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 import matplotlib
+
 matplotlib.use('TkAgg')
 from elviz_utils import read_sample_info
-
 
 
 def import_elviz_data():
@@ -30,12 +30,11 @@ def pivot_for_pca(dataframe):
 
 def most_abundant_genera_for_pca(data, top_percent):
     data['row_sum'] = data.sum(axis=1)
-    data.head()
     # reduce to top __ %
     # find the row_sum corresponding to the top 10%.
-    num_rows_to_keep = int(round(data.shape[0]*top_percent/100.))
-    print(num_rows_to_keep)
-
+    num_rows_to_keep = int(round(data.shape[0] * top_percent / 100.))
+    print('number of rows to keep:', num_rows_to_keep)
+    # print(data.head())
     # sort by row_sum so I can take the firs number of rows.
     data.sort(columns='row_sum', ascending=False, inplace=True)
     # print data.head()
@@ -46,6 +45,6 @@ def most_abundant_genera_for_pca(data, top_percent):
 
 
 def colnames_to_sample_info_array(dataframe):
-    col_df = pd.DataFrame({'ID' : dataframe.columns.values.tolist()})
+    col_df = pd.DataFrame({'ID':dataframe.reset_index().ID})
     sample_info = read_sample_info()
     return pd.merge(col_df, sample_info, how='left')
