@@ -118,7 +118,7 @@ def read_and_reduce_elviz_csv(filename, filepath, sample_info):
     df.rename(columns={'sum of reads per kilobase':'abundance'}, inplace=True)
     
     # sort so most abundant is on top. 
-    #print df.head()
+    #print(df.head())
     df.sort_values(by='abundance', axis=0, ascending=False, inplace=True)
     
     return df
@@ -136,17 +136,17 @@ def read_and_reduce_all(filename_list, filepath, sample_info):
                                               filepath=filepath,
                                               sample_info=sample_info)
         dataframe = dataframe.append(df_to_add)
-        print f  # prints filename
+        print(f)  # prints filename
 
     # make sure all the samples are there
     if len(dataframe.project.unique()) != 88:
-        print "Warnng!  only {} samples loaded.".format( \
-                                    len(dataframe.ID.unique()))
+        print("Warnng!  only {} samples loaded.".format( \
+                                    len(dataframe.ID.unique())))
     
     # make sure all the abundances add up to 1 for each sample ID
     for t, d in dataframe.groupby('ID'):
             if abs(1 - d['abundance'].sum()) >0.01:
-                print 'warning: abundance(s) may not sum to 1'
+                print('warning: abundance(s) may not sum to 1')
     
     return dataframe
 
@@ -159,7 +159,7 @@ def project_number_from_filename(s):
     :param s: filename (string) to input
     :return:
     """
-    #print s
+    #print(s)
     return int(re.search('elviz-contigs-([0-9]+).csv', s).group(1))
 
 
@@ -209,7 +209,7 @@ def write_excel_files(dataframe, filepath, by_genus=False):
     # loop over these tuples. 
     for (rep, week, oxy), d in by_repl_and_week:
         # use the writer that matches the replicate:
-        #print rep, week, oxy
+        #print(rep, week, oxy)
         writer = writer_dict[(oxy, rep)]
         sheet_name = oxy + '_O2' +"_rep_" + str(rep)+"_week_" + str(week)
         d.reset_index()
@@ -235,7 +235,7 @@ def filter_by_abundance(data, column, high, low):
     """
     species_to_keep = data[(data[column] <= high) &\
              (data[column] >= low)]['Genus'].unique()
-    print species_to_keep[0:5]# 
+    print(species_to_keep[0:5])
     return data[data['Genus'].isin(species_to_keep)]
 
 

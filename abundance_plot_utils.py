@@ -12,10 +12,10 @@ def plot_heatmap(data, high, low, oxy, rep, plot_dir):
     """ 
     # get rid of oxygen levels and replicates if specified.
     if oxy is not 'all':
-        print "keep only {} oxygen samples".format(oxy)
+        print("keep only {} oxygen samples".format(oxy))
         data = data[data['oxy']==oxy]
     if rep is not 'all':
-        print "keep only replicate levels:", rep
+        print("keep only replicate levels:", rep)
         data = data[data['rep'].isin(rep)]        
     data = filter_by_abundance(data=data, 
                                 column='abundance', 
@@ -62,6 +62,7 @@ def plot_heatmap(data, high, low, oxy, rep, plot_dir):
     
     # write a filename and save.
     filename = oxy + "_oxygen--{0}_to_{1}_abundance".format(low,high)
-    print 'filename:', filename
+    print('filename:', filename)
     g.savefig(plot_dir + filename + '.pdf')
+
 
