@@ -19,15 +19,15 @@ from sklearn.preprocessing import StandardScaler
 from elviz_utils import IMPORT_DATA_TYPES, read_elviz_CSV, read_elviz_CSVs, read_pickle_or_CSVs
 
 MIN_ROWS = 20
-EPS = 5
+EPS = .5
 MIN_SAMPLES = 4
 MAX_AVG_FOLD = 500  # I've seen over 20k, 500 seems to be 2x typical
-DATA_PICKLE = 'data.pkl'  # filename of previously parsed data
-DATA_DIR = './data/'  # location of CSV files
+DATA_PICKLE = 'data/data.pkl'  # filename of previously parsed data
+RAW_DATA_DIR = './raw_data/'  # location of CSV files
 RESULTS_DIR = './results/'  # location of results output
 HEURISTIC_SAMPlE_SIZE = 10
 HEURISTIC_PDF = 'heuristic.pdf'
-HEURISTIC_PICKLE = 'heuristic.pkl'
+HEURISTIC_PICKLE = 'data/heuristic.pkl'
 
 CLUSTER_COLUMNS = ['Average fold', 'Reference GC']
 
@@ -44,6 +44,7 @@ def dbscan_heuristic(elviz_data, scaler):
         print("processing full data set to compute heuristic for epsilon / N")
         distances = []
         for filename in elviz_data.keys():
+            # progress monitor
             print(".", end="")
             sys.stdout.flush()
             df = elviz_data[filename]
@@ -135,7 +136,7 @@ def main(argv):
         elif opt == '-e':
             heuristic_mode = True
 
-    [elviz_data, combined_df] = read_pickle_or_CSVs(DATA_PICKLE, DATA_DIR)
+    [elviz_data, combined_df] = read_pickle_or_CSVs(DATA_PICKLE, RAW_DATA_DIR)
 
     # Setup plotting limits
     print("determining plotting limits")
