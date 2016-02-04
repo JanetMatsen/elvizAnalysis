@@ -127,14 +127,20 @@ def plot_PCA_results(top_percent=20):
 
     # prepare axis labels, which also serve as dataframe column names.
     x_axis_label = 'principle component 1 ({0:.0%})'.format(variances[0])
-    y_axis_label = 'principle component 2 ({0:.0%}%)'.format(variances[1])
+    y_axis_label = 'principle component 2 ({0:.0%})'.format(variances[1])
 
     # put together the transformed data and sample descriptions
     plot_data = pd.concat([pd.DataFrame({x_axis_label:X_r[:,0],
                                      y_axis_label:X_r[:,1]}),
                        plot_info], axis=1)
 
-    color_palette = sns.cubehelix_palette(11, start=.5, rot=-.75)
+    # define a custom color palette using:
+    # Conditions were seized at week ten, so seven early samples in
+    # the original condition and four latest samples in an alternative
+    # condition.
+    color_palette = build_color_palette(num_items=14-4+1,
+                                        weeks_before_switch=7)
+    #color_palette = sns.cubehelix_palette(11, start=.5, rot=-.75)
 
     # update matplotlib params for bigger fonts, ticks:
     mpl.rcParams.update({
@@ -153,5 +159,30 @@ def plot_PCA_results(top_percent=20):
     g.fig.savefig('pca.pdf')
 
 
+def build_color_palette(num_items, weeks_before_switch):
+    num_pre_switch_colors = weeks_before_switch
+    num_post_switch_colors = num_items - num_pre_switch_colors
+    print('preparing colors for {} pre-oxygen-switch',
+          'samples and {} post-switch samples' \
+            .format(num_pre_switch_colors, num_post_switch_colors))
+
+    # get the first colors from this pallete:
+    pre_switch_colors = \
+        sns.cubehelix_palette(11, start=.5, rot=-.75)[0:num_pre_switch_colors]
+    print(pre_switch_colors)
+
+    # get post-switch colors here:
+    #post_switch_colors = sns.diverging_palette(220, 20, n=6)[::-1][0:num_post_switch_colors]
+    post_switch_colors = \
+        sns.color_palette("coolwarm", num_post_switch_colors)
+    #sns.light_palette("navy", reverse=True)[0:num_post_switch_colors]
+    rgb_colors = pre_switch_colors + post_switch_colors
+    sns.palplot(rgb_colors)
+
+    # check that we got the right amount
+    print(num_items)
+    assert(num_items == len(rgb_colors))
+    print("")
+    return rgb_colors
 
 
