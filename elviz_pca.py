@@ -112,7 +112,7 @@ def run_PCA(top_percent = 20):
     pca.fit(pca_input)
 
     # show how much each component contributed to variance
-    print("principle components' contribution to variance:")
+    print("principal components' contribution to variance:")
     variances =pca.explained_variance_ratio_
     print(variances)
 
@@ -126,8 +126,8 @@ def plot_PCA_results(top_percent=20):
     plot_info = colnames_to_sample_info_array(pca_input)
 
     # prepare axis labels, which also serve as dataframe column names.
-    x_axis_label = 'principle component 1 ({0:.0%})'.format(variances[0])
-    y_axis_label = 'principle component 2 ({0:.0%})'.format(variances[1])
+    x_axis_label = 'principal component 1 ({0:.0%})'.format(variances[0])
+    y_axis_label = 'principal component 2 ({0:.0%})'.format(variances[1])
 
     # put together the transformed data and sample descriptions
     plot_data = pd.concat([pd.DataFrame({x_axis_label:X_r[:,0],
