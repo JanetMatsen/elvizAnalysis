@@ -1,13 +1,9 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy as np
-
 import pandas as pd
 import seaborn as sns
 from sklearn.decomposition import PCA
-import matplotlib
 
-matplotlib.use('TkAgg')
 from elviz_utils import read_sample_info
 
 
@@ -68,7 +64,7 @@ def most_variant_genera_for_pca(data, top_percent):
 
 
 def colnames_to_sample_info_array(dataframe):
-    col_df = pd.DataFrame({'ID':dataframe.reset_index().ID})
+    col_df = pd.DataFrame({'ID': dataframe.reset_index().ID})
     sample_info = read_sample_info()
     return pd.merge(col_df, sample_info, how='left')
 
@@ -77,7 +73,7 @@ def sort_by_variance():
     df = import_elviz_data()
     df = pivot_for_pca(df)
     df['variance'] = df.var(axis=1)
-    df.sort_values(by='variance',ascending=False, inplace=True)
+    df.sort_values(by='variance', ascending=False, inplace=True)
     return df
 
 
@@ -92,7 +88,7 @@ def plot_variance(df=sort_by_variance(), log=True):
     plt.savefig('distribution_of_sample-wise_variances.pdf')
 
 
-def run_PCA(top_percent = 20):
+def run_pca(top_percent=20):
     # get data
     df = sort_by_variance()
 
@@ -113,14 +109,15 @@ def run_PCA(top_percent = 20):
 
     # show how much each component contributed to variance
     print("principal components' contribution to variance:")
-    variances =pca.explained_variance_ratio_
+    variances = pca.explained_variance_ratio_
     print(variances)
 
     return pca_input, pca.fit(pca_input).transform(pca_input), variances
 
-def plot_PCA_results(top_percent=20):
+
+def plot_pca_results(top_percent=20):
     # get data that's ready for PCA:
-    pca_input, X_r, variances = run_PCA(top_percent=top_percent)
+    pca_input, data_transformed, variances = run_pca(top_percent=top_percent)
 
     # import the sample info needed to map features to sample IDs.
     plot_info = colnames_to_sample_info_array(pca_input)
@@ -130,30 +127,30 @@ def plot_PCA_results(top_percent=20):
     y_axis_label = 'principal component 2 ({0:.0%})'.format(variances[1])
 
     # put together the transformed data and sample descriptions
-    plot_data = pd.concat([pd.DataFrame({x_axis_label:X_r[:,0],
-                                     y_axis_label:X_r[:,1]}),
-                       plot_info], axis=1)
+    plot_data = pd.concat([pd.DataFrame(
+        {x_axis_label: data_transformed[:, 0],
+         y_axis_label: data_transformed[:, 1]}), plot_info], axis=1)
 
     # define a custom color palette using:
     # Conditions were seized at week ten, so seven early samples in
     # the original condition and four latest samples in an alternative
     # condition.
-    color_palette = build_color_palette(num_items=14-4+1,
+    color_palette = build_color_palette(num_items=14 - 4 + 1,
                                         weeks_before_switch=7)
-    #color_palette = sns.cubehelix_palette(11, start=.5, rot=-.75)
+    # color_palette = sns.cubehelix_palette(11, start=.5, rot=-.75)
 
     # update matplotlib params for bigger fonts, ticks:
     mpl.rcParams.update({
-    'font.size': 16, 'axes.titlesize': 17, 'axes.labelsize': 15,
-    'xtick.labelsize': 10, 'ytick.labelsize': 13,
-    'font.weight': 600,
-    'axes.labelweight': 600, 'axes.titleweight': 600})
+        'font.size': 16, 'axes.titlesize': 17, 'axes.labelsize': 15,
+        'xtick.labelsize': 10, 'ytick.labelsize': 13,
+        'font.weight': 600,
+        'axes.labelweight': 600, 'axes.titleweight': 600})
 
     # Plot with Seaborn
     plt.figure(figsize=(12, 6))
     sns.set(style="ticks")
     g = sns.FacetGrid(plot_data, col="oxy", hue='week', palette=color_palette,
-                     size=5, aspect=1)
+                      size=5, aspect=1)
     g = (g.map(plt.scatter, x_axis_label, y_axis_label,
                edgecolor="w", s=60).add_legend())
     g.fig.savefig('pca.pdf')
@@ -162,9 +159,10 @@ def plot_PCA_results(top_percent=20):
 def build_color_palette(num_items, weeks_before_switch):
     num_pre_switch_colors = weeks_before_switch
     num_post_switch_colors = num_items - num_pre_switch_colors
-    print('preparing colors for {} pre-oxygen-switch',
-          'samples and {} post-switch samples' \
-            .format(num_pre_switch_colors, num_post_switch_colors))
+    print('preparing colors for {} pre-oxygen-switch'.format(
+        num_pre_switch_colors),
+          'samples and {} post-switch samples'
+          .format(num_post_switch_colors))
 
     # get the first colors from this pallete:
     pre_switch_colors = \
@@ -172,17 +170,16 @@ def build_color_palette(num_items, weeks_before_switch):
     print(pre_switch_colors)
 
     # get post-switch colors here:
-    #post_switch_colors = sns.diverging_palette(220, 20, n=6)[::-1][0:num_post_switch_colors]
+    # post_switch_colors = sns.diverging_palette(220, 20,
+    # n=6)[::-1][0:num_post_switch_colors]
     post_switch_colors = \
         sns.color_palette("coolwarm", num_post_switch_colors)
-    #sns.light_palette("navy", reverse=True)[0:num_post_switch_colors]
+    # sns.light_palette("navy", reverse=True)[0:num_post_switch_colors]
     rgb_colors = pre_switch_colors + post_switch_colors
     sns.palplot(rgb_colors)
 
     # check that we got the right amount
     print(num_items)
-    assert(num_items == len(rgb_colors))
+    assert (num_items == len(rgb_colors))
     print("")
     return rgb_colors
-
-
