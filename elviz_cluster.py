@@ -1,16 +1,19 @@
 #!/usr/bin/env python
-import sys
+"""
+"""
+
 import getopt
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
+import pickle
 import re
 import seaborn as sns
-import matplotlib.pyplot as plt
+import sys
+
 from matplotlib.backends.backend_pdf import PdfPages
 import scipy.spatial.distance
-import pickle
-
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
 from sklearn.datasets.samples_generator import make_blobs
