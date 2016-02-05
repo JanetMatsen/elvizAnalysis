@@ -77,15 +77,15 @@ def sort_by_variance():
     df = import_elviz_data()
     df = pivot_for_pca(df)
     df['variance'] = df.var(axis=1)
-    df.sort_values(by='variance',ascending=False)
+    df.sort_values(by='variance',ascending=False, inplace=True)
     return df
 
 
-def plot_variance(df=sort_by_variance()):
+def plot_variance(df=sort_by_variance(), log=True):
     fig, ax = plt.subplots()
-    df.reset_index().variance.plot(ax=ax, kind='hist',
-                                   bins=100, range=(0,0.05))
-    ax.set_yscale('log')
+    df.reset_index().variance.plot(ax=ax, kind='hist', bins=100)
+    if log:
+        ax.set_yscale('log')
     plt.title('distribution of variances (log scale)')
     plt.xlabel("variance for genera's abundance across all samples")
     plt.ylabel("frequency (log scale)")
