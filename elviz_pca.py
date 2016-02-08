@@ -109,7 +109,7 @@ def plot_variance(log=True, genus_only=True):
     plt.title('distribution of variances (log scale)')
     plt.xlabel("variance for genera's abundance across all samples")
     plt.ylabel("frequency (log scale)")
-    plt.savefig('distribution_of_sample-wise_variances.pdf')
+    plt.savefig('./plots/distribution_of_sample-wise_variances.pdf')
 
 
 def run_pca(top_percent=20, genus_only=True):
@@ -192,7 +192,7 @@ def plot_pca_results(top_percent=20, genus_only=True, facet_row=True):
                    edgecolor="w", s=60).add_legend())
 
 
-    filename='pca_of_top_{}_percent--'.format(top_percent)
+    filename='./plots/pca_of_top_{}_percent--'.format(top_percent)
 
     # prepare a filename, depending on whether all phylogeny or only genus
     # is used.
