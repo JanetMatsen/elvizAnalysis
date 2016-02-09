@@ -10,11 +10,9 @@ from elviz_utils import read_sample_info
 def import_elviz_data(genus_only=True):
     """
     Read pandas data from summarised table
+    :param genus_only: import data summarised to genus (True) or all scaffolds
     :return: pandas dataframe
     """
-
-    #return pd.read_csv("./results/reduced_data--genus_only.csv",
-    #                   dtype={'abundance': 'float'})
 
     df = pd.read_csv("./results/reduced_data--all_phylogeny_remains.csv")
 
@@ -23,7 +21,7 @@ def import_elviz_data(genus_only=True):
             df.groupby(['Genus', 'ID'])['abundance'].sum())
     else:
         df = pd.DataFrame(
-            df.groupby(['Kingdom','Phylum','Class','Order','Family',
+            df.groupby(['Kingdom', 'Phylum', 'Class', 'Order', 'Family',
                         'Genus', 'ID'])['abundance'].sum())
     return df
 
@@ -32,6 +30,7 @@ def pivot_for_pca(dataframe, genus_only=True):
     """
     pivot to the format required for scikitlearn pca
     :param dataframe:input dataframe reduced to genus only
+    :param genus_only: option to limit to genus (True) or keep all phylogeny
     :return:dataframe with columns as samples and rows as genera
     """
     print(dataframe.head())
@@ -101,7 +100,7 @@ def sort_by_variance(genus_only=True):
 
 
 def plot_variance(log=True, genus_only=True):
-    df=sort_by_variance(genus_only=genus_only)
+    df = sort_by_variance(genus_only=genus_only)
     fig, ax = plt.subplots()
     df.reset_index().variance.plot(ax=ax, kind='hist', bins=100)
     if log:
@@ -178,21 +177,20 @@ def plot_pca_results(top_percent=20, genus_only=True, facet_row=True):
         plt.figure(figsize=(12, 6))
     sns.set(style="ticks")
     if facet_row:
-        g = sns.FacetGrid(plot_data, col="oxy", row='rep', hue='week',
-                                                      palette=color_palette,
+        g = sns.FacetGrid(plot_data, col="oxy", row='rep',
+                          hue='week', palette=color_palette,
                           size=3, aspect=1)
         g = (g.map(plt.scatter, x_axis_label, y_axis_label,
                    edgecolor="w", s=60).add_legend())
 
     else:
-        g = sns.FacetGrid(plot_data, col="oxy", row=None, hue='week',
-                                                      palette=color_palette,
+        g = sns.FacetGrid(plot_data, col="oxy", row=None,
+                          hue='week', palette=color_palette,
                           size=5, aspect=1)
         g = (g.map(plt.scatter, x_axis_label, y_axis_label,
                    edgecolor="w", s=60).add_legend())
 
-
-    filename='./plots/pca_of_top_{}_percent--'.format(top_percent)
+    filename = './plots/pca_of_top_{}_percent--'.format(top_percent)
 
     # prepare a filename, depending on whether all phylogeny or only genus
     # is used.
