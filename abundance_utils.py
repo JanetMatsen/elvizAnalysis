@@ -80,15 +80,15 @@ def reduce_elviz_to_genus_rpk(df):
     return df.reset_index()
 
 
-def norm_by_ID(group):
+def normalize_groupby(group, column):
     """
-    Normalize all the sum of reads per kilobase to 1 for a given
+    Normalize all the sum of reads per kilobase to 1 for a provided
     groupy object.
 
     :param group: group to normalize by.  E.g. #_HOW#
     """
-    fold = group['sum of reads per kilobase']
-    group['sum of reads per kilobase'] = fold / sum(fold)
+    fold = group[column]
+    group[column] = fold / sum(fold)
     return group
 
 
@@ -121,11 +121,12 @@ def read_and_reduce_elviz_csv(filename, filepath, sample_info):
 
     sample_info.set_index(['project'])
     # merge to get sample_info on
-    df = df.groupby('project').apply(norm_by_ID)
+    df = df.groupby('project').apply(normalize_groupby,
+                                     'sum of reads per kilobase')
 
     df = pd.merge(df, sample_info, how='left')
 
-    # after norm_by_ID is applied, 'Average fold' is now a pooled number.
+    # after normalize_groupby is applied, 'Average fold' is now a pooled number.
     # rename column to abundance since we normalized it. 
     df.rename(columns={'sum of reads per kilobase': 'abundance'}, inplace=True)
 
