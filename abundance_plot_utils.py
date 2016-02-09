@@ -1,10 +1,11 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy
 import pandas as pd
 import seaborn as sns
 
 from abundance_utils import filter_by_abundance
-
+from abundance_utils import normalize_groupby
 
 def plot_heatmap(data, high, low, oxy, rep, plot_dir):
     """
@@ -85,3 +86,78 @@ def plot_heatmap(data, high, low, oxy, rep, plot_dir):
     filename = oxy + "_oxygen--{0}_to_{1}_abundance".format(low, high)
     print('filename:', filename)
     g.savefig(plot_dir + filename + '.pdf')
+
+
+def subset_on_phylogeny(dataframe, phylo_level, name):
+    """
+    Return only rows of the datframe where the value in column phylo_level
+    matches the specified name.
+
+    :param dataframe:
+    :param phylo_level:
+    :param name:
+    :return:
+    """
+    print(dataframe.columns)
+    return dataframe[dataframe[phylo_level] == name]
+
+
+def other_phylogeny_levels(level):
+    """
+    return the name of all the phylogenetic levels *not* specified by level.
+
+    Handy if you want to drop all the other columns.
+
+    :param level: string string string string
+    :return:
+    """
+    levels = ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus']
+    levels.remove(level)
+    return levels
+
+
+def sum_on_phylogeny(dataframe, phylo_level, name):
+    # E.g. if you pass phylo_level = 'Phylum' and name = 'Bacteroidetes'
+    # You will get one row with columns ['phylogenetic label', 'name',
+    # 'sum of abundances'] *per* sample.
+    # The sum of abundances results from groupby aggregations within the
+    # sample group.
+    relevant_rows = subset_on_phylogeny(dataframe=dataframe,
+                                             phylo_level=phylo_level,
+                                             name=name)
+    # Collaps all phylogeny below:
+    for col_name in other_phylogeny_levels(phylo_level):
+        del relevant_rows[col_name]
+
+    print(relevant_rows.columns)
+
+    # sum all
+    aggregated_rows = relevant_rows.groupby([phylo_level, 'ID'])['abundance'].sum()
+    #one_row_per_sample = relevant_rows.groupby('ID').apply(
+    #    normalize_groupby, 'abundance')
+
+    return aggregated_rows
+
+def plot_across_phylogeny(dataframe, phylo_dict):
+
+    # E advice: apply across columns
+    # http://stackoverflow.com/questions/19798153/difference-between-map-applymap-and-apply-methods-in-pandas
+    # Then we have fancy group-bys to do.  Skip!
+
+    # Instead grab rows one label at a time.  Aggregate (sum abundances) for
+    # all phylogenetic levels to the right of that column.  Will need to
+    # drop the diversity of that column
+    # Subset to phylogeny based on dict.
+    # Easiest way: append together rows that satisfy the criteria.
+
+
+    # What happens if you submit a Genus for something you also submitted an
+    # order for ???   For now assume the user is smarter than that.
+
+
+    # Also summarise # of taxa rows being grouped together.
+
+    # Sum stuff that is at lower phylogeny levels.
+
+    pass
+
