@@ -43,14 +43,22 @@ def plot_heatmap(data, high, low, oxy, rep, plot_dir):
         plot_aspect = .6
 
     def facet_heatmap(data, **kws):
-        data = data.pivot(index='Genus',
-                          columns='week',
-                          values='abundance')
+        """
+        Used to fill the subplots with data.
+
+        :param facet_data:
+        :param kws:
+        :return:
+        """
+
+        facet_data = data.pivot(index='Genus', columns='week',
+                                values='abundance')
         # Pass kwargs to heatmap  cmap used to be 'Blue'
-        sns.heatmap(data, cmap="YlGnBu", **kws)
+        sns.heatmap(facet_data, cmap="YlGnBu", **kws)
 
     with sns.plotting_context(font_scale=7):
         g = sns.FacetGrid(data, col='facet_replicate',
+                          margin_titles=True,
                           size=plot_size, aspect=plot_aspect)
 
         # Create a colorbar axes
@@ -67,12 +75,11 @@ def plot_heatmap(data, high, low, oxy, rep, plot_dir):
     # Add space so the colorbar doesn't overlap the plot
     g.fig.subplots_adjust(right=.9)
 
-    # add a supertitle.
-    # source: http://stackoverflow.com/questions/29813694/how-to-add-a-title-to-seaborn-facet-plot
+    # add a supertitle, you bet.
     plt.subplots_adjust(top=0.80)
     supertitle = str(low) + ' < abundance < ' + str(
         high) + ', {} oxygen'.format(oxy)
-    # g.fig.suptitle(supertitle, top=0.9, size=14)
+    g.fig.suptitle(supertitle, size=18)
 
     # write a filename and save.
     filename = oxy + "_oxygen--{0}_to_{1}_abundance".format(low, high)
