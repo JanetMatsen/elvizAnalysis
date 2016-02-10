@@ -129,14 +129,29 @@ def sum_on_phylogeny(dataframe, phylo_level, name):
     for col_name in other_phylogeny_levels(phylo_level):
         del relevant_rows[col_name]
 
-    print(relevant_rows.columns)
-
     # sum all
     aggregated_rows = relevant_rows.groupby([phylo_level, 'ID'])['abundance'].sum()
-    #one_row_per_sample = relevant_rows.groupby('ID').apply(
-    #    normalize_groupby, 'abundance')
 
     return aggregated_rows
+
+def aggregate_mixed_phylogeny(dataframe, phylo_dict):
+    # Loop over the different phylogenetic levels specified.
+    # Make a list of each dataframe that will be concatenated.
+    reduced_data = []
+    for key in phylo_dict.keys():
+        for name in phylo_dict[key]:
+            print(name)
+            reduced_rows = sum_on_phylogeny(dataframe=dataframe,
+                                            phylo_level=key,
+                                            name=name)
+            print(reduced_rows.head(2))
+            # make a new dataframe out of it.
+            reduced_data.append(pd.DataFrame({'phylogenetic level':key,
+                               'phylogenetic name': name,
+                                'abundance sum':reduced_rows}))
+            print(reduced_data[-1].head(2))
+    # Concatenate data
+    return pd.concat(reduced_data)
 
 def plot_across_phylogeny(dataframe, phylo_dict):
 
