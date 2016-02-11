@@ -163,7 +163,13 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict):
                               'ID': reduced_rows['ID']}))
             print(reduced_data[-1].head(2))
     # Concatenate data
-    return pd.concat(reduced_data)
+    dataframe = pd.concat(reduced_data)
+    # merge on the sample info.
+    print('dataframe.head()')
+    print(dataframe.head())
+    dataframe = pd.merge(left=dataframe, right=read_sample_info())
+
+    return dataframe
 
 
 def plot_across_phylogeny(dataframe, phylo_dict):
@@ -189,8 +195,11 @@ def plot_across_phylogeny(dataframe, phylo_dict):
         :return:
         """
 
-        facet_data = data.pivot(index='Genus', columns='week',
-                                values='abundance')
+        # pivot only supports one column for now.
+        # http://stackoverflow.com/questions/32805267/pandas-pivot-on-multiple-columns-gives-the-truth-value-of-a-dataframe-is-ambigu
+        facet_data = data.pivot(
+            index=['phylogenetic name'],
+            columns='ID', values='abundance sum')
         # Pass kwargs to heatmap  cmap used to be 'Blue'
         sns.heatmap(facet_data, cmap="YlGnBu", **kws)
 
