@@ -7,6 +7,7 @@ import seaborn as sns
 from abundance_utils import filter_by_abundance
 from abundance_utils import normalize_groupby
 from elviz_utils import read_sample_info
+from abundance_utils import make_directory
 
 def plot_heatmap(data, high, low, oxy, rep, plot_dir):
     """
@@ -64,7 +65,8 @@ def plot_heatmap(data, high, low, oxy, rep, plot_dir):
                           size=plot_size, aspect=plot_aspect)
         g.set_xticklabels(rotation=30)
 
-        # Create a colorbar axes
+    # Create a colorbar axes
+    # TODO: add label
     cbar_ax = g.fig.add_axes([.92, .3, .02, .4])
 
     g = g.map_dataframe(facet_heatmap,
@@ -178,6 +180,21 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict):
     return dataframe
 
 
+def phylo_dict_to_filename(phylo_dict):
+    filename = ""
+    for key in phylo_dict:
+        print(key)
+        filename += key
+        filename += '-'
+        for value in phylo_dict[key]:
+            filename += value + '_'
+        filename += '--'
+    # remove last two '--' characters
+    filename = filename[:-3]
+    filename += ".pdf"
+    return filename
+
+
 def plot_across_phylogeny(dataframe, phylo_dict):
 
     # What happens if you submit a Genus for something you also submitted an
@@ -217,7 +234,9 @@ def plot_across_phylogeny(dataframe, phylo_dict):
                           #aspect=plot_aspect
                           )
 
+    # TODO: add label for color bar.
     cbar_ax = g.fig.add_axes([.92, .3, .02, .4])
+
     g = g.map_dataframe(facet_heatmap,
                         cbar_ax=cbar_ax, vmin=0)
 
@@ -226,12 +245,18 @@ def plot_across_phylogeny(dataframe, phylo_dict):
 
     # add a supertitle, you bet.
     plt.subplots_adjust(top=0.85)
-    supertitle = 'This is a supertitle, you bet.'
+    supertitle = phylo_dict_to_filename(phylo_dict)
     g.fig.suptitle(supertitle, size=18)
 
     # Also summarise # of taxa rows being grouped together.
 
     # prepare filename and save.
+    plotdir = './plots/mixed_phylogeny/'
+    make_directory(plotdir)
+    filepath = plotdir + supertitle
+    print(filepath)
+    g.fig.savefig(filepath)
+
 
 
     return g
