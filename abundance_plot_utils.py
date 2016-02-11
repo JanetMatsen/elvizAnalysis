@@ -125,8 +125,8 @@ def sum_on_phylogeny(dataframe, phylo_level, name):
     # The sum of abundances results from groupby aggregations within the
     # sample group.
     relevant_rows = subset_on_phylogeny(dataframe=dataframe,
-                                             phylo_level=phylo_level,
-                                             name=name)
+                                        phylo_level=phylo_level,
+                                        name=name)
     # Collaps all phylogeny below:
     for col_name in other_phylogeny_levels(phylo_level):
         del relevant_rows[col_name]
@@ -182,13 +182,9 @@ def plot_across_phylogeny(dataframe, phylo_dict):
 
     # What happens if you submit a Genus for something you also submitted an
     # order for ???   For now assume the user is smarter than that.
-    abundances = aggregate_mixed_phylogeny(dataframe=dataframe,
-                                           phylo_dict=phylo_dict)
-
-    ## merge on sample_info using ID column.
-    #sample_info = read_sample_info()
-    #plot_data = pd.merge(abundances.reset_index(), sample_info)
-    plot_data = abundances
+    plot_data = aggregate_mixed_phylogeny(dataframe=dataframe,
+                                          phylo_dict=phylo_dict)
+    plot_data['facet_replicate'] = 'replicate ' + plot_data['rep'].astype(str)
 
     print('plot_data.head()')
     print(plot_data.head())
@@ -206,9 +202,10 @@ def plot_across_phylogeny(dataframe, phylo_dict):
         # http://stackoverflow.com/questions/32805267/pandas-pivot-on-multiple-columns-gives-the-truth-value-of-a-dataframe-is-ambigu
         facet_data = data.pivot(
             index='phylogenetic name',
-            columns='rep', values='abundance sum')
+            columns='facet_replicate', values='abundance sum')
         # Pass kwargs to heatmap  cmap used to be 'Blue'
         sns.heatmap(facet_data, cmap="YlGnBu", annot=True, **kws)
+        g.set_xticklabels(rotation=30)
 
     with sns.plotting_context(font_scale=7):
         g = sns.FacetGrid(plot_data,
@@ -233,6 +230,9 @@ def plot_across_phylogeny(dataframe, phylo_dict):
     g.fig.suptitle(supertitle, size=18)
 
     # Also summarise # of taxa rows being grouped together.
+
+    # prepare filename and save.
+
 
     return g
 
