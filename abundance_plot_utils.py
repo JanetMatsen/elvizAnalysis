@@ -146,6 +146,11 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict):
             reduced_rows = sum_on_phylogeny(dataframe=dataframe,
                                             phylo_level=key,
                                             name=name)
+
+            # check that you got some rows.  Might be a typo if not!
+            assert(reduced_rows.shape[0] > 0), \
+                'found no rows for {} = "{}"'.format(key, name)
+
             # the index needs to be dropped but it is stored below as
             # 'phylogenetic level' and 'phylogenetic name'
             # I haven't been able to reset_index on this series to drop the
@@ -180,9 +185,10 @@ def plot_across_phylogeny(dataframe, phylo_dict):
     abundances = aggregate_mixed_phylogeny(dataframe=dataframe,
                                            phylo_dict=phylo_dict)
 
-    # merge on sample_info using ID column.
-    sample_info = read_sample_info()
-    plot_data = pd.merge(abundances.reset_index(), sample_info)
+    ## merge on sample_info using ID column.
+    #sample_info = read_sample_info()
+    #plot_data = pd.merge(abundances.reset_index(), sample_info)
+    plot_data = abundances
 
     print('plot_data.head()')
     print(plot_data.head())
