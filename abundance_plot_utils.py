@@ -6,6 +6,7 @@ import seaborn as sns
 
 from abundance_utils import filter_by_abundance
 from abundance_utils import normalize_groupby
+from elviz_utils import read_sample_info
 
 def plot_heatmap(data, high, low, oxy, rep, plot_dir):
     """
@@ -144,35 +145,72 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict):
             reduced_rows = sum_on_phylogeny(dataframe=dataframe,
                                             phylo_level=key,
                                             name=name)
+            # the index needs to be dropped but it is stored below as
+            # 'phylogenetic level' and 'phylogenetic name'
+            # I haven't been able to reset_index on this series to drop the
+            # index so I'm doing it this way:
+            reduced_rows = reduced_rows.reset_index()
+            print('reduced_rows.head(2)')
+            print(reduced_rows.head(2))
+            del reduced_rows[key]
+            print('reduced_rows.head(2)')
             print(reduced_rows.head(2))
             # make a new dataframe out of it.
-            reduced_data.append(pd.DataFrame({'phylogenetic level':key,
-                               'phylogenetic name': name,
-                                'abundance sum':reduced_rows}))
+            reduced_data.append(
+                pd.DataFrame({'phylogenetic level': key,
+                              'phylogenetic name': name,
+                              'abundance sum': reduced_rows['abundance'],
+                              'ID': reduced_rows['ID']}))
             print(reduced_data[-1].head(2))
     # Concatenate data
     return pd.concat(reduced_data)
 
+
 def plot_across_phylogeny(dataframe, phylo_dict):
-
-    # E advice: apply across columns
-    # http://stackoverflow.com/questions/19798153/difference-between-map-applymap-and-apply-methods-in-pandas
-    # Then we have fancy group-bys to do.  Skip!
-
-    # Instead grab rows one label at a time.  Aggregate (sum abundances) for
-    # all phylogenetic levels to the right of that column.  Will need to
-    # drop the diversity of that column
-    # Subset to phylogeny based on dict.
-    # Easiest way: append together rows that satisfy the criteria.
-
 
     # What happens if you submit a Genus for something you also submitted an
     # order for ???   For now assume the user is smarter than that.
+    abundances = aggregate_mixed_phylogeny(dataframe=dataframe,
+                                           phylo_dict=phylo_dict)
 
+    # merge on sample_info using ID column.
+    sample_info = read_sample_info()
+    plot_data = pd.merge(abundances.reset_index(), sample_info)
+
+    print('plot_data.head()')
+    print(plot_data.head())
+
+    def facet_heatmap(data, **kws):
+        """
+        Used to fill the subplots with data.
+
+        :param facet_data:
+        :param kws:
+        :return:
+        """
+
+        facet_data = data.pivot(index='Genus', columns='week',
+                                values='abundance')
+        # Pass kwargs to heatmap  cmap used to be 'Blue'
+        sns.heatmap(facet_data, cmap="YlGnBu", **kws)
+
+    with sns.plotting_context(font_scale=7):
+        g = sns.FacetGrid(plot_data,
+                          col='rep',
+                          #col='facet_replicate',
+                          margin_titles=True,
+                          #size=plot_size,
+                          #aspect=plot_aspect
+                        )
+
+    cbar_ax = g.fig.add_axes([.92, .3, .02, .4])
+    g = g.map_dataframe(facet_heatmap,
+                        cbar_ax=cbar_ax, vmin=0,
+                        # Specify the colorbar axes and limits
+                        #vmax=max(data.abundance)
+                        )
 
     # Also summarise # of taxa rows being grouped together.
 
-    # Sum stuff that is at lower phylogeny levels.
-
-    pass
+    return g
 
