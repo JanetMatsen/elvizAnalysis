@@ -62,6 +62,7 @@ def plot_heatmap(data, high, low, oxy, rep, plot_dir):
         g = sns.FacetGrid(data, col='facet_replicate',
                           margin_titles=True,
                           size=plot_size, aspect=plot_aspect)
+        g.set_xticklabels(rotation=30)
 
         # Create a colorbar axes
     cbar_ax = g.fig.add_axes([.92, .3, .02, .4])
@@ -198,26 +199,37 @@ def plot_across_phylogeny(dataframe, phylo_dict):
         # pivot only supports one column for now.
         # http://stackoverflow.com/questions/32805267/pandas-pivot-on-multiple-columns-gives-the-truth-value-of-a-dataframe-is-ambigu
         facet_data = data.pivot(
-            index=['phylogenetic name'],
+            index='phylogenetic name',
             columns='ID', values='abundance sum')
         # Pass kwargs to heatmap  cmap used to be 'Blue'
-        sns.heatmap(facet_data, cmap="YlGnBu", **kws)
+        sns.heatmap(facet_data, cmap="YlGnBu", annot=True, **kws)
 
     with sns.plotting_context(font_scale=7):
         g = sns.FacetGrid(plot_data,
-                          col='rep',
+                          col='week',
                           #col='facet_replicate',
-                          margin_titles=True,
+                          row='oxy',
+                          margin_titles=True
                           #size=plot_size,
                           #aspect=plot_aspect
                         )
 
     cbar_ax = g.fig.add_axes([.92, .3, .02, .4])
     g = g.map_dataframe(facet_heatmap,
-                        cbar_ax=cbar_ax, vmin=0,
-                        # Specify the colorbar axes and limits
-                        #vmax=max(data.abundance)
-                        )
+                        cbar_ax=cbar_ax, vmin=0)
+
+    # roate x axes
+    # http://stackoverflow.com/questions/28992174/facetgrid-legend-empty
+    #for ax in g.axes:
+    #    plt.setp(ax.get_xticklabels(), rotation=45)
+
+    # Add space so the colorbar doesn't overlap th plot.
+    g.fig.subplots_adjust(right=0.9)
+
+    # add a supertitle, you bet.
+    plt.subplots_adjust(top=0.80)
+    #supertitle = 'This is a supertitle, you bet.'
+    #g.fig.supertitle('cat dog rat', size=18)
 
     # Also summarise # of taxa rows being grouped together.
 
