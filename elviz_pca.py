@@ -92,6 +92,7 @@ def colnames_to_sample_info_array(dataframe):
 
 
 def sort_by_variance(genus_only=True):
+    # TODO: does more than sort; should rename this.
     df = import_elviz_data(genus_only=genus_only)
     df = pivot_for_pca(df, genus_only=genus_only)
     df['variance'] = df.var(axis=1)
@@ -113,6 +114,7 @@ def plot_variance(log=True, genus_only=True):
 
 def run_pca(top_percent=20, genus_only=True):
     # get data
+    # has a variance column tacked on.
     df = sort_by_variance(genus_only=genus_only)
 
     # drop rows that don't have sum of abundances in the top %.
@@ -120,8 +122,8 @@ def run_pca(top_percent=20, genus_only=True):
     print(pca_input.shape)
 
     # remove the variance column if it is there:
-    if 'variance' in df.columns:
-        del df['variance']
+    if 'variance' in pca_input.columns:
+        del pca_input['variance']
 
     # transpose so the genera are columns and samples are rows.
     pca_input = pca_input.transpose()
@@ -144,7 +146,7 @@ def plot_pca_results(top_percent=20, genus_only=True, facet_row=True):
         run_pca(top_percent=top_percent, genus_only=genus_only)
 
     # import the sample info needed to map features to sample IDs.
-    plot_info = colnames_to_sample_info_array(pca_input)
+    sample_info = colnames_to_sample_info_array(pca_input)
 
     # prepare axis labels, which also serve as dataframe column names.
     x_axis_label = 'principal component 1 ({0:.0%})'.format(variances[0])
@@ -153,7 +155,7 @@ def plot_pca_results(top_percent=20, genus_only=True, facet_row=True):
     # put together the transformed data and sample descriptions
     plot_data = pd.concat([pd.DataFrame(
         {x_axis_label: data_transformed[:, 0],
-         y_axis_label: data_transformed[:, 1]}), plot_info], axis=1)
+         y_axis_label: data_transformed[:, 1]}), sample_info], axis=1)
 
     # define a custom color palette using:
     # Conditions were seized at week ten, so seven early samples in
@@ -172,12 +174,12 @@ def plot_pca_results(top_percent=20, genus_only=True, facet_row=True):
 
     # Plot with Seaborn
     if facet_row:
-        plt.figure(figsize=(8, 4))
+        plt.figure(figsize=(4, 8))
     else:
-        plt.figure(figsize=(12, 6))
+        plt.figure(figsize=(6, 12))
     sns.set(style="ticks")
     if facet_row:
-        g = sns.FacetGrid(plot_data, col="oxy", row='rep',
+        g = sns.FacetGrid(plot_data, row="oxy", col='rep',
                           hue='week', palette=color_palette,
                           size=3, aspect=1)
         g = (g.map(plt.scatter, x_axis_label, y_axis_label,
