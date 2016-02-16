@@ -34,13 +34,11 @@ def pivot_for_pca(dataframe, genus_only=True):
     :param genus_only: option to limit to genus (True) or keep all phylogeny
     :return:dataframe with columns as samples and rows as genera
     """
-    print(dataframe.head())
     if genus_only:
         dataframe.reset_index(inplace=True)
         dataframe = dataframe.pivot(index='Genus', columns='ID',
                                     values='abundance')
     else:
-        print(dataframe.head())
         dataframe = dataframe.unstack(6)
         # dataframe = dataframe.pivot(
         #     index=['Kingdom','Phylum','Class','Order','Family','Genus'],
@@ -136,13 +134,13 @@ def run_pca(top_percent=20, genus_only=True):
     # show how much each component contributed to variance
     print("principal components' contribution to variance:")
     variances = pca.explained_variance_ratio_
-    print(variances)
+    print(variances[1:10], '\n (first 10)')
 
     return pca_input, pca.fit(pca_input).transform(pca_input), variances
 
 
 def plot_pca_results(top_percent=20, genus_only=False,
-                     facet_row=True, uniform_axes=True):
+                     facet_row=True, uniform_axes=True, savefig=True):
     # get data that's ready for PCA:
     pca_input, data_transformed, variances = \
         run_pca(top_percent=top_percent, genus_only=genus_only)
@@ -190,22 +188,26 @@ def plot_pca_results(top_percent=20, genus_only=False,
     axis_max = math.ceil(max_value * 100) / 100.0
     axis_min = math.floor(min_value * 100) / 100.0
 
+    def base_plot(**kwargs):
+        plot = sns.FacetGrid(plot_data,
+                             hue='week', palette=color_palette,
+                             size=3, aspect=1,
+                             **kwargs)
+        plot = (plot.map(plt.scatter, x_axis_label, y_axis_label,
+                         edgecolor="w", s=60).add_legend())
+        return plot
+
+    plot_args = {}
 
     if facet_row:
-        g = sns.FacetGrid(plot_data, row="oxy", col='rep',
-                          hue='week', palette=color_palette,
-                          xlim=(axis_min, axis_max),
-                          ylim=(axis_min, axis_max),
-                          size=3, aspect=1)
-        g = (g.map(plt.scatter, x_axis_label, y_axis_label,
-                   edgecolor="w", s=60).add_legend())
+        plot_args['row'] = 'oxy'
+        plot_args['col'] = 'rep'
+    if uniform_axes:
+        plot_args['xlim'] = (axis_min, axis_max)
+        plot_args['ylim'] = (axis_min, axis_max)
 
-    else:
-        g = sns.FacetGrid(plot_data, col="oxy", row=None,
-                          hue='week', palette=color_palette,
-                          size=5, aspect=1)
-        g = (g.map(plt.scatter, x_axis_label, y_axis_label,
-                   edgecolor="w", s=60).add_legend())
+    print(plot_args)
+    g = base_plot(**plot_args)
 
     filename = './plots/pca_of_top_{}_percent--'.format(top_percent)
 
@@ -220,7 +222,8 @@ def plot_pca_results(top_percent=20, genus_only=False,
     else:
         filename += '.pdf'
 
-    g.fig.savefig(filename)
+    if savefig:
+        g.fig.savefig(filename)
 
 
 def build_color_palette(num_items, weeks_before_switch):
