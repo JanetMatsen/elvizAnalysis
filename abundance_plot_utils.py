@@ -237,10 +237,17 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
         sns.heatmap(facet_data, cmap="YlGnBu", **kws)
         g.set_xticklabels(rotation=30)
 
+    # Calculate the size, aspect depending on the number of rows per subplot
+    num_rows = len(plot_data['phylogenetic name'].unique())
+    size = 1.5 + 0.2*num_rows
+    aspect = 1
+
     with sns.plotting_context(font_scale=7):
         g = sns.FacetGrid(plot_data,
                           col=facet,
                           row='oxy',
+                          size=size,
+                          aspect=aspect,
                           margin_titles=True)
 
     # TODO: add label for color bar.
