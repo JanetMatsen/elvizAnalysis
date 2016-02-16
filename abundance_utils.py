@@ -86,6 +86,7 @@ def normalize_groupby(group, column):
     groupy object.
 
     :param group: group to normalize by.  E.g. #_HOW#
+    :param column: coulumn to sum within.
     """
     fold = group[column]
     group[column] = fold / sum(fold)
@@ -126,7 +127,8 @@ def read_and_reduce_elviz_csv(filename, filepath, sample_info):
 
     df = pd.merge(df, sample_info, how='left')
 
-    # after normalize_groupby is applied, 'Average fold' is now a pooled number.
+    # after normalize_groupby is applied, 'Average fold' is now a pooled
+    # number.
     # rename column to abundance since we normalized it. 
     df.rename(columns={'sum of reads per kilobase': 'abundance'}, inplace=True)
 

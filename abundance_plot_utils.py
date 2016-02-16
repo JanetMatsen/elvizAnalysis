@@ -1,6 +1,5 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy
 import pandas as pd
 import seaborn as sns
 
@@ -9,12 +8,13 @@ from abundance_utils import normalize_groupby
 from elviz_utils import read_sample_info
 from abundance_utils import make_directory
 
-def plot_heatmap(data, high, low, oxy, rep, plot_dir):
+
+def plot_heatmap(dataframe, high, low, oxy, rep, plot_dir):
     """
     Make a heatmap at Genus, using oganisms withing the specified abundance
     cutoffs.
 
-    :param data: dataframe to pass
+    :param dataframe: dataframe to pass
     :param high: highest abundance to include genera for
     :param low: lowes abundance to include genera for
     :param oxy: oxygen tension, "Low" or "High"
@@ -25,17 +25,17 @@ def plot_heatmap(data, high, low, oxy, rep, plot_dir):
     # get rid of oxygen levels and replicates if specified.
     if oxy is not 'all':
         print("keep only {} oxygen samples".format(oxy))
-        data = data[data['oxy'] == oxy]
+        dataframe = dataframe[dataframe['oxy'] == oxy]
     if rep is not 'all':
         print("keep only replicate levels:", rep)
-        data = data[data['rep'].isin(rep)]
-    data = filter_by_abundance(data=data,
-                               column='abundance',
-                               high=high, low=low)
-    data['facet_replicate'] = 'replicate ' + data['rep'].astype(str)
+        dataframe = dataframe[dataframe['rep'].isin(rep)]
+    dataframe = filter_by_abundance(data=dataframe,
+                                    column='abundance',
+                                    high=high, low=low)
+    dataframe['facet_replicate'] = 'replicate ' + dataframe['rep'].astype(str)
 
     # make height of the plot a function of the number of rows (Genera):
-    num_data_rows = len(data['Genus'].unique())
+    num_data_rows = len(dataframe['Genus'].unique())
     plot_size = 2 + num_data_rows / 7
     plot_aspect = 2
     if num_data_rows > 6:
@@ -49,7 +49,7 @@ def plot_heatmap(data, high, low, oxy, rep, plot_dir):
         """
         Used to fill the subplots with data.
 
-        :param facet_data:
+        :param data:
         :param kws:
         :return:
         """
@@ -60,7 +60,7 @@ def plot_heatmap(data, high, low, oxy, rep, plot_dir):
         sns.heatmap(facet_data, cmap="YlGnBu", **kws)
 
     with sns.plotting_context(font_scale=7):
-        g = sns.FacetGrid(data, col='facet_replicate',
+        g = sns.FacetGrid(dataframe, col='facet_replicate',
                           margin_titles=True,
                           size=plot_size, aspect=plot_aspect)
         g.set_xticklabels(rotation=30)
@@ -72,7 +72,7 @@ def plot_heatmap(data, high, low, oxy, rep, plot_dir):
     g = g.map_dataframe(facet_heatmap,
                         cbar_ax=cbar_ax, vmin=0,
                         # Specify the colorbar axes and limits
-                        vmax=max(data.abundance))
+                        vmax=max(dataframe.abundance))
 
     g.set_titles(col_template="{col_name}", fontweight='bold', fontsize=18)
     g.set_axis_labels('week')
@@ -134,9 +134,11 @@ def sum_on_phylogeny(dataframe, phylo_level, name):
         del relevant_rows[col_name]
 
     # sum all
-    aggregated_rows = relevant_rows.groupby([phylo_level, 'ID'])['abundance'].sum()
+    aggregated_rows = relevant_rows.groupby(
+        [phylo_level, 'ID'])['abundance'].sum()
 
     return aggregated_rows
+
 
 def aggregate_mixed_phylogeny(dataframe, phylo_dict):
     # Loop over the different phylogenetic levels specified.
@@ -210,7 +212,7 @@ def plot_across_phylogeny(dataframe, phylo_dict):
         """
         Used to fill the subplots with data.
 
-        :param facet_data:
+        :param data: dataframe to plot
         :param kws:
         :return:
         """
@@ -227,11 +229,8 @@ def plot_across_phylogeny(dataframe, phylo_dict):
     with sns.plotting_context(font_scale=7):
         g = sns.FacetGrid(plot_data,
                           col='week',
-                          #col='facet_replicate',
                           row='oxy',
                           margin_titles=True
-                          #size=plot_size,
-                          #aspect=plot_aspect
                           )
 
     # TODO: add label for color bar.
@@ -257,7 +256,4 @@ def plot_across_phylogeny(dataframe, phylo_dict):
     print(filepath)
     g.fig.savefig(filepath)
 
-
-
     return g
-
