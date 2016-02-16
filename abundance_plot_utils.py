@@ -209,7 +209,7 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
     # The one not used as the facet will be used as the columns in the
     # subplot.
     if facet == 'week':
-        cols_in_facet = 'racet_replicate'
+        cols_in_facet = 'facet_replicate'
     else:
         cols_in_facet = 'week'
 
@@ -229,22 +229,13 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
         :param kws:
         :return:
         """
-        print(groupby)
-
         # pivot only supports one column for now.
         # http://stackoverflow.com/questions/32805267/pandas-pivot-on-multiple-columns-gives-the-truth-value-of-a-dataframe-is-ambigu
         facet_data = pivot_so_columns_are_plotting_variable(
             dataframe=data, groupby=groupby)
         # Pass kwargs to heatmap  cmap used to be 'Blue'
-        sns.heatmap(facet_data, cmap="YlGnBu",
-                    annot=True,  # TODO: control from outer function call
-                    **kws)
+        sns.heatmap(facet_data, cmap="YlGnBu", **kws)
         g.set_xticklabels(rotation=30)
-
-    # TODO: control annotate and other plot aesthetics from outer function call
-    # facet_kwargs = {}
-    # if annotate:
-    #     facet_kwargs['annot'] = True
 
     with sns.plotting_context(font_scale=7):
         g = sns.FacetGrid(plot_data,
@@ -256,7 +247,8 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
     cbar_ax = g.fig.add_axes([.92, .3, .02, .4])
 
     g = g.map_dataframe(facet_heatmap,
-                        cbar_ax=cbar_ax, vmin=0, groupby=cols_in_facet)
+                        cbar_ax=cbar_ax, vmin=0, annot=annotate,
+                        groupby=cols_in_facet)
 
     # Add space so the colorbar doesn't overlap th plot.
     g.fig.subplots_adjust(right=0.9)
