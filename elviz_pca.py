@@ -1,3 +1,4 @@
+import math
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -140,7 +141,8 @@ def run_pca(top_percent=20, genus_only=True):
     return pca_input, pca.fit(pca_input).transform(pca_input), variances
 
 
-def plot_pca_results(top_percent=20, genus_only=True, facet_row=True):
+def plot_pca_results(top_percent=20, genus_only=False,
+                     facet_row=True, uniform_axes=True):
     # get data that's ready for PCA:
     pca_input, data_transformed, variances = \
         run_pca(top_percent=top_percent, genus_only=genus_only)
@@ -171,16 +173,29 @@ def plot_pca_results(top_percent=20, genus_only=True, facet_row=True):
         'xtick.labelsize': 10, 'ytick.labelsize': 13,
         'font.weight': 600,
         'axes.labelweight': 600, 'axes.titleweight': 600})
-
     # Plot with Seaborn
     if facet_row:
         plt.figure(figsize=(4, 8))
     else:
         plt.figure(figsize=(6, 12))
     sns.set(style="ticks")
+
+    # prepare the max and min axes values if we are forcing them to same range
+    pc_colnames = [col for col in plot_data.columns
+                   if 'principal component' in col]
+
+    max_value = plot_data[pc_colnames].max(axis=0).max()
+    min_value = plot_data[pc_colnames].min(axis=0).min()
+
+    axis_max = math.ceil(max_value * 100) / 100.0
+    axis_min = math.floor(min_value * 100) / 100.0
+
+
     if facet_row:
         g = sns.FacetGrid(plot_data, row="oxy", col='rep',
                           hue='week', palette=color_palette,
+                          xlim=(axis_min, axis_max),
+                          ylim=(axis_min, axis_max),
                           size=3, aspect=1)
         g = (g.map(plt.scatter, x_axis_label, y_axis_label,
                    edgecolor="w", s=60).add_legend())
