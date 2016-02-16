@@ -197,7 +197,7 @@ def phylo_dict_to_filename(phylo_dict):
     return filename
 
 
-def plot_across_phylogeny(dataframe, phylo_dict):
+def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
 
     # What happens if you submit a Genus for something you also submitted an
     # order for ???   For now assume the user is smarter than that.
@@ -205,10 +205,23 @@ def plot_across_phylogeny(dataframe, phylo_dict):
                                           phylo_dict=phylo_dict)
     plot_data['facet_replicate'] = 'replicate ' + plot_data['rep'].astype(str)
 
+    # The data is seperated by these two variables.
+    # The one not used as the facet will be used as the columns in the
+    # subplot.
+    if facet == 'week':
+        cols_in_facet = 'racet_replicate'
+    else:
+        cols_in_facet = 'week'
+
     print('plot_data.head()')
     print(plot_data.head())
 
-    def facet_heatmap(data, **kws):
+    def pivot_so_columns_are_plotting_variable(dataframe, groupby):
+        return dataframe.pivot(index='phylogenetic name',
+                               columns=groupby,
+                               values='abundance sum')
+
+    def facet_heatmap(data, groupby, **kws):
         """
         Used to fill the subplots with data.
 
@@ -216,28 +229,34 @@ def plot_across_phylogeny(dataframe, phylo_dict):
         :param kws:
         :return:
         """
+        print(groupby)
 
         # pivot only supports one column for now.
         # http://stackoverflow.com/questions/32805267/pandas-pivot-on-multiple-columns-gives-the-truth-value-of-a-dataframe-is-ambigu
-        facet_data = data.pivot(
-            index='phylogenetic name',
-            columns='facet_replicate', values='abundance sum')
+        facet_data = pivot_so_columns_are_plotting_variable(
+            dataframe=data, groupby=groupby)
         # Pass kwargs to heatmap  cmap used to be 'Blue'
-        sns.heatmap(facet_data, cmap="YlGnBu", annot=True, **kws)
+        sns.heatmap(facet_data, cmap="YlGnBu",
+                    annot=True,  # TODO: control from outer function call
+                    **kws)
         g.set_xticklabels(rotation=30)
+
+    # TODO: control annotate and other plot aesthetics from outer function call
+    # facet_kwargs = {}
+    # if annotate:
+    #     facet_kwargs['annot'] = True
 
     with sns.plotting_context(font_scale=7):
         g = sns.FacetGrid(plot_data,
-                          col='week',
+                          col=facet,
                           row='oxy',
-                          margin_titles=True
-                          )
+                          margin_titles=True)
 
     # TODO: add label for color bar.
     cbar_ax = g.fig.add_axes([.92, .3, .02, .4])
 
     g = g.map_dataframe(facet_heatmap,
-                        cbar_ax=cbar_ax, vmin=0)
+                        cbar_ax=cbar_ax, vmin=0, groupby=cols_in_facet)
 
     # Add space so the colorbar doesn't overlap th plot.
     g.fig.subplots_adjust(right=0.9)
