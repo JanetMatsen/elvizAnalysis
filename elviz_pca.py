@@ -217,6 +217,8 @@ def plot_pca_results(top_percent=20, genus_only=False,
         filename += 'genus_only'
     else:
         filename += 'all_phylogeny'
+    if uniform_axes:
+        filename += '_unif_axes_'
     if facet_row:
         filename += '--faceted.pdf'
     else:
