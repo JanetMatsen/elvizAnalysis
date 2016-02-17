@@ -221,7 +221,7 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
                                columns=groupby,
                                values='abundance sum')
 
-    def facet_heatmap(data, groupby, **kws):
+    def facet_heatmap(data, groupby, xrotation, **kws):
         """
         Used to fill the subplots with data.
 
@@ -235,12 +235,26 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
             dataframe=data, groupby=groupby)
         # Pass kwargs to heatmap  cmap used to be 'Blue'
         sns.heatmap(facet_data, cmap="YlGnBu", **kws)
-        g.set_xticklabels(rotation=30)
+        g.set_xticklabels(rotation=xrotation)
 
-    # Calculate the size, aspect depending on the number of rows per subplot
-    num_rows = len(plot_data['phylogenetic name'].unique())
-    size = 1.5 + 0.2*num_rows
-    aspect = 1
+
+    # todo: add a label at the bottom like "replicate" or "week"
+    # Control plot aesthetics depending on facet option.
+    if facet == 'week':
+        xrotation = 90
+        num_rows = len(plot_data['phylogenetic name'].unique())
+        size = 2 * 0.2*num_rows
+        aspect = 1
+
+    else:
+        xrotation = 0
+        # Calculate the size, aspect depending on the number of rows per subplot
+        num_rows = len(plot_data['phylogenetic name'].unique())
+        size = 1.1 + 0.2*num_rows
+        aspect = 1.4 + 0.2*num_rows
+
+
+
 
     with sns.plotting_context(font_scale=7):
         g = sns.FacetGrid(plot_data,
@@ -253,11 +267,12 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
     # Add axes for the colorbar.  [left, bottom, width, height]
     cbar_ax = g.fig.add_axes([.94, .3, .02, .4], title='abundance')
 
-    # todo: add a label at the bottom like "replicate" or "week"
+
 
     g = g.map_dataframe(facet_heatmap,
                         cbar_ax=cbar_ax, vmin=0, annot=annotate,
-                        groupby=cols_in_facet)
+                        groupby=cols_in_facet,
+                        xrotation=xrotation)
 
     # Add space so the colorbar doesn't overlap th plot.
     g.fig.subplots_adjust(right=0.9)
