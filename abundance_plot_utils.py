@@ -250,8 +250,10 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
                           aspect=aspect,
                           margin_titles=True)
 
-    # TODO: add label for color bar.
-    cbar_ax = g.fig.add_axes([.92, .3, .02, .4])
+    # Add axes for the colorbar.  [left, bottom, width, height]
+    cbar_ax = g.fig.add_axes([.94, .3, .02, .4], title='abundance')
+
+    # todo: add a label at the bottom like "replicate" or "week"
 
     g = g.map_dataframe(facet_heatmap,
                         cbar_ax=cbar_ax, vmin=0, annot=annotate,
