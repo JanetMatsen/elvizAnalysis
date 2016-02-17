@@ -182,19 +182,21 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict):
     return dataframe
 
 
-def phylo_dict_to_filename(phylo_dict):
-    filename = ""
+def phylo_dict_to_descriptive_string(phylo_dict):
+    # todo: go through highest orders of phylo first.
+    # e.g. phylum looped over before order.
+    desc_string = ""
     for key in phylo_dict:
         print(key)
-        filename += key
-        filename += '-'
+        desc_string += key
+        desc_string += '-'
         for value in phylo_dict[key]:
-            filename += value + '_'
-        filename += '--'
+            desc_string += value + '_'
+        desc_string = desc_string[:-2]
+        desc_string += '--'
     # remove last two '--' characters
-    filename = filename[:-3]
-    filename += ".pdf"
-    return filename
+    desc_string = desc_string[:-3]
+    return desc_string
 
 
 def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
@@ -245,16 +247,15 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
         num_rows = len(plot_data['phylogenetic name'].unique())
         size = 2 * 0.2*num_rows
         aspect = 1
+        space_for_cbar = 0.85
 
     else:
-        xrotation = 0
+        xrotation = 90
         # Calculate the size, aspect depending on the number of rows per subplot
         num_rows = len(plot_data['phylogenetic name'].unique())
-        size = 1.1 + 0.2*num_rows
-        aspect = 1.4 + 0.2*num_rows
-
-
-
+        size = 0.9 + 0.2*num_rows
+        aspect = 1.2
+        space_for_cbar = 0.85
 
     with sns.plotting_context(font_scale=7):
         g = sns.FacetGrid(plot_data,
@@ -265,7 +266,7 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
                           margin_titles=True)
 
     # Add axes for the colorbar.  [left, bottom, width, height]
-    cbar_ax = g.fig.add_axes([.94, .3, .02, .4], title='abundance')
+    cbar_ax = g.fig.add_axes([.92, .3, .02, .4], title='abundance')
 
 
 
@@ -274,13 +275,19 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
                         groupby=cols_in_facet,
                         xrotation=xrotation)
 
+    # not working: adding an x-label for each facet (I want only 1)
+    #g.set_axis_labels(['x label', 'ylabel'])
+    #g.fig.subplots_adjust(top=0.2)
+    #g.fig.text(0.5, 0.1, s='armadillo') #, *args, **kwargs)
+    #g.fig.xlabel('ardvark')
+
     # Add space so the colorbar doesn't overlap th plot.
-    g.fig.subplots_adjust(right=0.9)
+    g.fig.subplots_adjust(right=space_for_cbar)
 
     # add a supertitle, you bet.
     plt.subplots_adjust(top=0.85)
-    supertitle = phylo_dict_to_filename(phylo_dict)
-    g.fig.suptitle(supertitle, size=18)
+    supertitle = phylo_dict_to_descriptive_string(phylo_dict)
+    g.fig.suptitle(supertitle, size=15)
 
     # Also summarise # of taxa rows being grouped together.
 
@@ -288,6 +295,8 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
     plotdir = './plots/mixed_phylogeny/'
     make_directory(plotdir)
     filepath = plotdir + supertitle
+    filepath += "--{}".format(facet)
+    filepath += ".pdf"
     print(filepath)
     g.fig.savefig(filepath)
 
