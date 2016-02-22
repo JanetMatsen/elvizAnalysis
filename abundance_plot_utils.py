@@ -3,13 +3,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-from abundance_utils import filter_by_abundance
-from abundance_utils import normalize_groupby
-from elviz_utils import read_sample_info
-from abundance_utils import make_directory
+import abundance_utils
+import elviz_utils
 
 
-def plot_heatmap(dataframe, high, low, oxy, rep, plot_dir):
+def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
     """
     Make a heatmap at Genus, using oganisms withing the specified abundance
     cutoffs.
@@ -29,9 +27,9 @@ def plot_heatmap(dataframe, high, low, oxy, rep, plot_dir):
     if rep is not 'all':
         print("keep only replicate levels:", rep)
         dataframe = dataframe[dataframe['rep'].isin(rep)]
-    dataframe = filter_by_abundance(data=dataframe,
-                                    column='abundance',
-                                    high=high, low=low)
+    dataframe = abundance_utils.filter_by_abundance(data=dataframe,
+                                                    column='abundance',
+                                                    high=high, low=low)
     dataframe['facet_replicate'] = 'replicate ' + dataframe['rep'].astype(str)
 
     # make height of the plot a function of the number of rows (Genera):
@@ -63,7 +61,7 @@ def plot_heatmap(dataframe, high, low, oxy, rep, plot_dir):
         g = sns.FacetGrid(dataframe, col='facet_replicate',
                           margin_titles=True,
                           size=plot_size, aspect=plot_aspect)
-        g.set_xticklabels(rotation=30)
+        g.set_xticklabels(rotation=90)
 
     # Create a colorbar axes
     # TODO: add label
@@ -89,6 +87,10 @@ def plot_heatmap(dataframe, high, low, oxy, rep, plot_dir):
     # write a filename and save.
     filename = oxy + "_oxygen--{0}_to_{1}_abundance".format(low, high)
     print('filename:', filename)
+
+    plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
+
+    # save figure
     g.savefig(plot_dir + filename + '.pdf')
 
 
@@ -124,8 +126,6 @@ def phyla_below_level(dataframe, phylo_dict):
     pass
 
 
-
-
 def sum_on_phylogeny(dataframe, phylo_level, name):
     # E.g. if you pass phylo_level = 'Phylum' and name = 'Bacteroidetes'
     # You will get one row with columns ['phylogenetic label', 'name',
@@ -152,7 +152,6 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict):
     reduced_data = []
     for key in phylo_dict.keys():
         for name in phylo_dict[key]:
-            print(name)
             reduced_rows = sum_on_phylogeny(dataframe=dataframe,
                                             phylo_level=key,
                                             name=name)
@@ -166,24 +165,17 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict):
             # I haven't been able to reset_index on this series to drop the
             # index so I'm doing it this way:
             reduced_rows = reduced_rows.reset_index()
-            print('reduced_rows.head(2)')
-            print(reduced_rows.head(2))
             del reduced_rows[key]
-            print('reduced_rows.head(2)')
-            print(reduced_rows.head(2))
             # make a new dataframe out of it.
             reduced_data.append(
                 pd.DataFrame({'phylogenetic level': key,
                               'phylogenetic name': name,
                               'abundance sum': reduced_rows['abundance'],
                               'ID': reduced_rows['ID']}))
-            print(reduced_data[-1].head(2))
     # Concatenate data
     dataframe = pd.concat(reduced_data)
     # merge on the sample info.
-    print('dataframe.head()')
-    print(dataframe.head())
-    dataframe = pd.merge(left=dataframe, right=read_sample_info())
+    dataframe = pd.merge(left=dataframe, right=elviz_utils.read_sample_info())
 
     return dataframe
 
@@ -198,14 +190,16 @@ def phylo_dict_to_descriptive_string(phylo_dict):
         desc_string += '-'
         for value in phylo_dict[key]:
             desc_string += value + '_'
-        desc_string = desc_string[:-2]
+        desc_string = desc_string[:-1]
         desc_string += '--'
     # remove last two '--' characters
-    desc_string = desc_string[:-3]
+    desc_string = desc_string[:-2]
     return desc_string
 
 
-def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
+def plot_across_phylogeny(dataframe, phylo_dict,
+                          facet='week', annotate=True,
+                          plot_dir='./plots'):
 
     # todo: What happens if you submit a Genus for something you also
     # submitted an order for???   For now assume the user is smarter than that.
@@ -234,6 +228,8 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
         Used to fill the subplots with data.
 
         :param data: dataframe to plot
+        :param groupby: column to group on
+        :param xrotation:
         :param kws:
         :return:
         """
@@ -244,7 +240,6 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
         # Pass kwargs to heatmap  cmap used to be 'Blue'
         sns.heatmap(facet_data, cmap="YlGnBu", **kws)
         g.set_xticklabels(rotation=xrotation)
-
 
     # todo: add a label at the bottom like "replicate" or "week"
     # Control plot aesthetics depending on facet option.
@@ -257,7 +252,8 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
 
     else:
         xrotation = 90
-        # Calculate the size, aspect depending on the number of rows per subplot
+        # Calculate the size, aspect depending on the number of
+        #  rows per subplot
         num_rows = len(plot_data['phylogenetic name'].unique())
         size = 0.9 + 0.2*num_rows
         aspect = 1.2
@@ -274,18 +270,16 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
     # Add axes for the colorbar.  [left, bottom, width, height]
     cbar_ax = g.fig.add_axes([.92, .3, .02, .4], title='abundance')
 
-
-
     g = g.map_dataframe(facet_heatmap,
                         cbar_ax=cbar_ax, vmin=0, annot=annotate,
                         groupby=cols_in_facet,
                         xrotation=xrotation)
 
     # todo: add an x-label for each facet (I want only 1)
-    #g.set_axis_labels(['x label', 'ylabel'])
-    #g.fig.subplots_adjust(top=0.2)
-    #g.fig.text(0.5, 0.1, s='armadillo') #, *args, **kwargs)
-    #g.fig.xlabel('ardvark')
+    # g.set_axis_labels(['x label', 'ylabel'])
+    # g.fig.subplots_adjust(top=0.2)
+    # g.fig.text(0.5, 0.1, s='armadillo') #, *args, **kwargs)
+    # g.fig.xlabel('ardvark')
 
     # Add space so the colorbar doesn't overlap th plot.
     g.fig.subplots_adjust(right=space_for_cbar)
@@ -298,9 +292,8 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
     # Also summarise # of taxa rows being grouped together.
 
     # prepare filename and save.
-    plotdir = './plots/mixed_phylogeny/'
-    make_directory(plotdir)
-    filepath = plotdir + supertitle
+    plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
+    filepath = plot_dir + supertitle
     filepath += "--{}".format(facet)
     filepath += ".pdf"
     print(filepath)
