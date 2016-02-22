@@ -173,24 +173,6 @@ def project_number_from_filename(s):
     return int(re.search('elviz-contigs-([0-9]+).csv', s).group(1))
 
 
-# def prepare_excel_dictionary(dataframe):
-#     """
-#     Make a dictionary like
-#     {('High', 1): 'elviz_binned--HighO2_rep1.xlsx',
-#      ('High', 2): 'elviz_binned--HighO2_rep2.xlsx', ...}
-#
-#     :param dataframe: groupby based dataframe
-#     :return: dictionary
-#     """
-#     # write same dictionary in a loop
-#     excel_files = {}
-#     for ox in dataframe['oxy'].unique():
-#         for rep in dataframe['rep'].unique():
-#             excel_files[(ox, re)] = \
-#                 'elviz_binned--{}O2_rep{}.xlsx'.format(ox, rep)
-#    return excel_files
-
-
 def prepare_excel_writer_dict(dataframe, filepath, by_genus=False):
     """
     Prepare a dictionary of Pandas ExcelWriters for each replicate at each
