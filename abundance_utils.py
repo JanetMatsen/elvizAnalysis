@@ -3,12 +3,6 @@ import pandas as pd
 import re
 from elviz_utils import IMPORT_DATA_TYPES
 
-IMPORT_METAINFO_TYPES = {'ID': 'str',
-                         'oxy': 'str',
-                         'rep': 'int',
-                         'week': 'int',
-                         'project': 'int'}
-
 
 def make_directory(dirpath):
     if not os.path.exists(dirpath):
@@ -48,12 +42,13 @@ def reduce_elviz_to_genus_rpk(df):
     """
 
     # get rid of undesired columns because the data is big.
+    # Note: this is not necessary for reduction by groupby below.
     columns_to_drop = ['datasetId', 'contigId',
                        'Average fold',
                        'Reference GC', 'Covered percent', 'Covered bases',
                        # 'Plus reads', 'Minus reads', # keep for read counting
                        'Median fold',
-                       'Read GC', 'Complete Lineage', 'MG scaffold_oid']
+                       'Read GC', 'Complete Lineage', 'IMG scaffold_oid']
     for c in columns_to_drop:
         if c in df.columns:
             del df[c]
@@ -82,8 +77,7 @@ def reduce_elviz_to_genus_rpk(df):
 
 def normalize_groupby(group, column):
     """
-    Normalize all the sum of reads per kilobase to 1 for a provided
-    groupy object.
+    Normalize all the sum of column to 1 for a given groupy object.
 
     :param group: group to normalize by.  E.g. #_HOW#
     :param column: coulumn to sum within.
@@ -98,9 +92,9 @@ def read_and_reduce_elviz_csv(filename, filepath, sample_info):
     Read in a csv from elviz, extract the ID and project number, 
     then reduce to one row per phylogeny.
 
-    :param filename:
-    :param filepath:
-    :param sample_info:
+    :param filename: filename to raw Elviz .csv
+    :param filepath: filepath where file lives
+    :param sample_info: sample meta_info to use.
     :return:
     """
 
@@ -114,9 +108,6 @@ def read_and_reduce_elviz_csv(filename, filepath, sample_info):
     # dataframe if you want to add an ID column.
     df = pd.DataFrame(reduce_elviz_to_genus_rpk(df))
 
-    # Save the filepath + filename, since we've had trouble with the csv files
-    df['filepath'] = filepath + '/' + filename
-
     # Add a column for the JGI project number.
     df['project'] = project_number_from_filename(filename)
 
@@ -127,19 +118,23 @@ def read_and_reduce_elviz_csv(filename, filepath, sample_info):
 
     df = pd.merge(df, sample_info, how='left')
 
-    # after normalize_groupby is applied, 'Average fold' is now a pooled
-    # number.
-    # rename column to abundance since we normalized it. 
+    # rename column to abundance since we normalized it.
     df.rename(columns={'sum of reads per kilobase': 'abundance'}, inplace=True)
 
     # sort so most abundant is on top. 
-    # print(df.head())
     df.sort_values(by='abundance', axis=0, ascending=False, inplace=True)
 
     return df
 
 
 def read_and_reduce_all(filename_list, filepath, sample_info):
+    """
+
+    :param filename_list: list of raw Elviz .csv filenames
+    :param filepath: location of Elviz .csv files
+    :param sample_info: sample metainfo Pandas DataFrame
+    :return:
+    """
     # Load in a first dataframe.  Will append the rest to it. 
     dataframe = read_and_reduce_elviz_csv(filename=filename_list[0],
                                           filepath=filepath,
@@ -155,7 +150,7 @@ def read_and_reduce_all(filename_list, filepath, sample_info):
 
     # make sure all the samples are there
     if len(dataframe.project.unique()) != 88:
-        print("Warnng!  only {} samples loaded.".format(
+        print("Warning!  only {} samples loaded.".format(
             len(dataframe.ID.unique())))
 
     # make sure all the abundances add up to 1 for each sample ID
@@ -172,31 +167,41 @@ def project_number_from_filename(s):
 
     E.g. 'elviz-contigs-1056013.csv' --> 1056013
     :param s: filename (string) to input
-    :return:
+    :return: string of numbers for Elviz project number.
     """
     # print(s)
     return int(re.search('elviz-contigs-([0-9]+).csv', s).group(1))
 
 
-def prepare_excel_dictionary(dataframe):
-    """
-    Make a dictionary like
-    {('High', 1): 'elviz_binned--HighO2_rep1.xlsx',
-     ('High', 2): 'elviz_binned--HighO2_rep2.xlsx', ...}
-
-    :param dataframe: groupby based dataframe
-    :return: dictionary
-    """
-    # write same dictionary in a loop
-    excel_files = {}
-    for ox in dataframe['oxy'].unique():
-        for rep in dataframe['rep'].unique():
-            excel_files[(ox, re)] = \
-                'elviz_binned--{}O2_rep{}.xlsx'.format(ox, rep)
-    return excel_files
+# def prepare_excel_dictionary(dataframe):
+#     """
+#     Make a dictionary like
+#     {('High', 1): 'elviz_binned--HighO2_rep1.xlsx',
+#      ('High', 2): 'elviz_binned--HighO2_rep2.xlsx', ...}
+#
+#     :param dataframe: groupby based dataframe
+#     :return: dictionary
+#     """
+#     # write same dictionary in a loop
+#     excel_files = {}
+#     for ox in dataframe['oxy'].unique():
+#         for rep in dataframe['rep'].unique():
+#             excel_files[(ox, re)] = \
+#                 'elviz_binned--{}O2_rep{}.xlsx'.format(ox, rep)
+#    return excel_files
 
 
 def prepare_excel_writer_dict(dataframe, filepath, by_genus=False):
+    """
+    Prepare a dictionary of Pandas ExcelWriters for each replicate at each
+    oxygen level.
+
+    :param dataframe: aggregated abundances dataframe
+    :param filepath: filepath to store .xlsx files
+    :param by_genus: whether data has been reduced to genus level before
+    aggregating.
+    :return:
+    """
     writer_dict = {}
     for oxy in dataframe['oxy'].unique():
         for rep in dataframe['rep'].unique():
@@ -212,8 +217,13 @@ def prepare_excel_writer_dict(dataframe, filepath, by_genus=False):
 
 
 def write_excel_files(dataframe, filepath, by_genus=False):
-    # Initialize a dictionary of excel filenames using the oxygen and
-    # replicate #s
+    """
+
+    :param dataframe:
+    :param filepath:
+    :param by_genus:
+    :return:
+    """
 
     # prepare excel_writers for each condition; store in a dictionary. 
     # e.g. {('High', 4): <pandas.io.excel._XlsxWriter object at 0x11291e490>,
