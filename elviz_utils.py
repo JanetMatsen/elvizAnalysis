@@ -49,6 +49,28 @@ def read_elviz_CSV(filename):
     return df
 
 
+def make_directory(dirpath):
+    """
+    Make the directory if it doesn't exist.
+    """
+    if not os.path.exists(dirpath):
+        os.makedirs(dirpath)
+
+
+def prepare_plot_dir(dirpath):
+    """
+    Add a trailing / to the plot dir if missing and creat dir if needed.
+
+    :param dirpath: path of existing or planned directory
+    :return: dirpath with / as the final character
+    """
+    # add a slash to filename if it wasn't provided.
+    if dirpath[-1] != '/':
+        dirpath += '/'
+    make_directory(dirpath)
+    return dirpath
+
+
 def read_elviz_CSVs(directory):
     elviz_data = {}
     elviz_files = [filename for filename in os.listdir(directory) if
