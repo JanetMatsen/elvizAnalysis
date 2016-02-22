@@ -4,11 +4,6 @@ import re
 from elviz_utils import IMPORT_DATA_TYPES
 
 
-def make_directory(dirpath):
-    if not os.path.exists(dirpath):
-        os.makedirs(dirpath)
-
-
 def read_elviz_csv(filename, filepath):
     """
     Read in a csv from elviz, extract the ID and project number,
