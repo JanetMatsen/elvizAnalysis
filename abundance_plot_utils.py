@@ -120,6 +120,12 @@ def other_phylogeny_levels(level):
     return levels
 
 
+def phyla_below_level(dataframe, phylo_dict):
+    pass
+
+
+
+
 def sum_on_phylogeny(dataframe, phylo_level, name):
     # E.g. if you pass phylo_level = 'Phylum' and name = 'Bacteroidetes'
     # You will get one row with columns ['phylogenetic label', 'name',
@@ -201,8 +207,8 @@ def phylo_dict_to_descriptive_string(phylo_dict):
 
 def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
 
-    # What happens if you submit a Genus for something you also submitted an
-    # order for ???   For now assume the user is smarter than that.
+    # todo: What happens if you submit a Genus for something you also
+    # submitted an order for???   For now assume the user is smarter than that.
     plot_data = aggregate_mixed_phylogeny(dataframe=dataframe,
                                           phylo_dict=phylo_dict)
     plot_data['facet_replicate'] = 'replicate ' + plot_data['rep'].astype(str)
@@ -275,7 +281,7 @@ def plot_across_phylogeny(dataframe, phylo_dict, facet='week', annotate=True):
                         groupby=cols_in_facet,
                         xrotation=xrotation)
 
-    # not working: adding an x-label for each facet (I want only 1)
+    # todo: add an x-label for each facet (I want only 1)
     #g.set_axis_labels(['x label', 'ylabel'])
     #g.fig.subplots_adjust(top=0.2)
     #g.fig.text(0.5, 0.1, s='armadillo') #, *args, **kwargs)
