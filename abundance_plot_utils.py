@@ -64,8 +64,7 @@ def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
         g.set_xticklabels(rotation=90)
 
     # Create a colorbar axes
-    # TODO: add label
-    cbar_ax = g.fig.add_axes([.92, .3, .02, .4])
+    cbar_ax = g.fig.add_axes([.94, .3, .02, .4], title='abundance')
 
     g = g.map_dataframe(facet_heatmap,
                         cbar_ax=cbar_ax, vmin=0,
@@ -205,13 +204,13 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     # submitted an order for???   For now assume the user is smarter than that.
     plot_data = aggregate_mixed_phylogeny(dataframe=dataframe,
                                           phylo_dict=phylo_dict)
-    plot_data['facet_replicate'] = 'replicate ' + plot_data['rep'].astype(str)
 
     # The data is seperated by these two variables.
     # The one not used as the facet will be used as the columns in the
     # subplot.
     if facet == 'week':
-        cols_in_facet = 'facet_replicate'
+
+        cols_in_facet = 'rep'
     else:
         cols_in_facet = 'week'
 
@@ -242,13 +241,17 @@ def plot_across_phylogeny(dataframe, phylo_dict,
         g.set_xticklabels(rotation=xrotation)
 
     # todo: add a label at the bottom like "replicate" or "week"
+    # currently replicate is turned into facet_replicate but should just
+    # make a label that says replicate.  Week
+
     # Control plot aesthetics depending on facet option.
     if facet == 'week':
-        xrotation = 90
+        xrotation = 0
         num_rows = len(plot_data['phylogenetic name'].unique())
         size = 2 * 0.2*num_rows
         aspect = 1
         space_for_cbar = 0.85
+        x_axis_label = 'replicate'
 
     else:
         xrotation = 90
@@ -258,6 +261,8 @@ def plot_across_phylogeny(dataframe, phylo_dict,
         size = 0.9 + 0.2*num_rows
         aspect = 1.2
         space_for_cbar = 0.85
+        x_axis_label = 'week'
+    # todo: make wider if annotate = True.
 
     with sns.plotting_context(font_scale=7):
         g = sns.FacetGrid(plot_data,
@@ -275,6 +280,11 @@ def plot_across_phylogeny(dataframe, phylo_dict,
                         groupby=cols_in_facet,
                         xrotation=xrotation)
 
+    g.set_axis_labels(x_axis_label)
+
+    # add space for x label
+    g.fig.subplots_adjust(bottom=0.2)
+
     # todo: add an x-label for each facet (I want only 1)
     # g.set_axis_labels(['x label', 'ylabel'])
     # g.fig.subplots_adjust(top=0.2)
@@ -283,9 +293,12 @@ def plot_across_phylogeny(dataframe, phylo_dict,
 
     # Add space so the colorbar doesn't overlap th plot.
     g.fig.subplots_adjust(right=space_for_cbar)
+    # todo: still not enough room for
+    # Order-Burkholderiales_Methylophilales_Methylococcales--
+    # Phylum-Bacteroidetes--rep.pdf
 
     # add a supertitle, you bet.
-    plt.subplots_adjust(top=0.85)
+    plt.subplots_adjust(top=0.80)
     supertitle = phylo_dict_to_descriptive_string(phylo_dict)
     g.fig.suptitle(supertitle, size=15)
 
