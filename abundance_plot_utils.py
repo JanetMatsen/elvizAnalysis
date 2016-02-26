@@ -1,3 +1,4 @@
+import math
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -119,6 +120,24 @@ def other_phylogeny_levels(level):
     levels = ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus']
     levels.remove(level)
     return levels
+
+
+def phylo_levels_above(phylo_level):
+    """
+    E.g. 'Order' --> ['Kingdom', 'Phylum', 'Class']
+    """
+    p_levels = ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus']
+    position_of_phylo_level = p_levels.index(phylo_level)
+    return p_levels[0:position_of_phylo_level]
+
+
+def phylo_levels_below(phylo_level):
+    """
+    E.g. 'Order' --> ['Family', 'Genus']
+    """
+    p_levels = ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus']
+    position_of_phylo_level = p_levels.index(phylo_level)
+    return p_levels[position_of_phylo_level + 1:]
 
 
 def phyla_below_level(dataframe, phylo_dict):
@@ -313,3 +332,128 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     g.fig.savefig(filepath)
 
     return g
+
+
+def label_from_phylo_colnames(*args):
+    """
+    e.g. ['Burkholderiales', 'Comamonadaceae, 'other'] -->
+        'Burkholderiales_Comamonadaceae_other', or
+    ['Burkholderiales', NaN, 'other']
+    """
+    #print('args: {}'.format(args))
+    name_string = ""
+    for name in args:
+        if name != 'other':
+            if name != 'unknown':
+                #if not math.isnan(name):   #np.isnan(name):
+                #print('adding name {}'.format(name))
+                name_string += name
+                name_string += ", "
+    # remove the last ", "
+    if len(name_string) > 0:
+        #print('length of {} is > 0'.format(name_string))
+        return name_string[:-2]
+    else:
+        #print('all fields empty.  returning "?"')
+        return '?'
+
+
+def heatmap_all_below(dataframe, phylo_dict):
+    # grab the data for that phylo:
+    # for now assume jusst 1 key and 1 value.
+    phylo_level = list(phylo_dict.keys())[0]
+    phylo_name = list(phylo_dict.values())[0]
+    dataframe = dataframe[dataframe[phylo_level] == phylo_name]
+    print(dataframe.head())
+
+    # Columns to form a concatenated label from:
+    label_cols = phylo_levels_below(phylo_level=phylo_level)
+    print('label_cols: {}'.format(label_cols))
+
+    # change nan cells to 'unknown'
+    dataframe.fillna('unknown', inplace=True)
+
+
+    # dataframe['name_string'] = ""
+    # for colname in label_cols:
+    #     dataframe['name_string'] = dataframe['name_string'] + \
+    #                                dataframe[colname]
+    #     dataframe['']
+
+
+    # make a summary string representing the phylogeny for everything below
+    # the level specified by phylo_level
+    # First remove too broad of phylogeny.
+    # for p_level in phylo_levels_above(phylo_level):
+    #     del dataframe[p_level]
+
+    dataframe['name_string'] = dataframe.apply(
+        lambda row: label_from_phylo_colnames(row['Family'],
+                                              row['Genus']), axis=1)
+
+    # Plot as usual, using the stuff developed above.
+    # todo: factor some of this??
+    def pivot_so_columns_are_plotting_variable(dataframe, groupby):
+        return dataframe.pivot(index='name_string',
+                               columns=groupby,
+                               values='abundance')
+
+    def facet_heatmap(data, groupby, xrotation, **kws):
+        """
+        Used to fill the subplots with data.
+
+        :param data: dataframe to plot
+        :param groupby: column to group on
+        :param xrotation:
+        :param kws:
+        :return:
+        """
+        # pivot only supports one column for now.
+        # http://stackoverflow.com/questions/32805267/pandas-pivot-on-multiple-columns-gives-the-truth-value-of-a-dataframe-is-ambigu
+        facet_data = pivot_so_columns_are_plotting_variable(
+            dataframe=data, groupby=groupby)
+        # Pass kwargs to heatmap  cmap used to be 'Blue'
+        sns.heatmap(facet_data, cmap="YlGnBu", **kws)
+        g.set_xticklabels(rotation=xrotation)
+
+    with sns.plotting_context(font_scale=7):
+        g = sns.FacetGrid(dataframe,
+                          col='rep',
+                          row='oxy',
+                          size=10,
+                          aspect=.5,
+                          margin_titles=True)
+
+    # Add axes for the colorbar.  [left, bottom, width, height]
+    cbar_ax = g.fig.add_axes([.92, .3, .02, .4], title='abundance')
+
+    g = g.map_dataframe(facet_heatmap,
+                        cbar_ax=cbar_ax, vmin=0, annot=False,
+                        groupby='week',
+                        xrotation=0)
+
+    g.set_axis_labels('abcdefg')
+
+    # add space for x label
+    g.fig.subplots_adjust(bottom=0.2)
+
+    # room for colorbar (cbar)
+    g.fig.subplots_adjust(right=0.85)
+
+    # add a supertitle, you bet.
+    plt.subplots_adjust(top=0.80)
+    supertitle = phylo_dict_to_descriptive_string(phylo_dict)
+    g.fig.suptitle(supertitle, size=15)
+
+    # Also summarise # of taxa rows being grouped together.
+
+    # prepare filename and save.
+    plot_dir = elviz_utils.prepare_plot_dir('abc') #plot_dir)
+    filepath = plot_dir + supertitle
+    filepath += "--{}".format('week')
+    filepath += ".pdf"
+    print(filepath)
+    g.fig.savefig(filepath)
+
+    return g
+
