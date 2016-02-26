@@ -29,7 +29,7 @@ def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
         print("keep only replicate levels:", rep)
         dataframe = dataframe[dataframe['rep'].isin(rep)]
     dataframe = abundance_utils.filter_by_abundance(data=dataframe,
-                                                    column='abundance',
+                                                    abundance_column='abundance',
                                                     high=high, low=low)
     dataframe['facet_replicate'] = 'replicate ' + dataframe['rep'].astype(str)
 
@@ -358,7 +358,7 @@ def label_from_phylo_colnames(*args):
         return '?'
 
 
-def heatmap_all_below(dataframe, phylo_dict, plot_dir):
+def heatmap_all_below(dataframe, phylo_dict, plot_dir, low_cutoff=0.001):
     # grab the data for that phylo:
     # for now assume jusst 1 key and 1 value.
     phylo_level = list(phylo_dict.keys())[0]
@@ -390,6 +390,16 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir):
         label_building_lambda(f=label_from_phylo_colnames,
                               columns=label_cols), axis=1)
 
+    # reduce to only name_string rows with at least one abundance > the
+    # threshold set by low_cutoff to we don't have a zillion rows:
+    # todo: allow high to change?
+    dataframe = \
+        abundance_utils.filter_by_abundance(data=dataframe,
+                                            abundance_column='abundance',
+                                            high=1,
+                                            low=low_cutoff,
+                                            phylo_column='name_string')
+
     # Plot as usual, using the stuff developed above.
     # todo: factor some of this??
     def pivot_so_columns_are_plotting_variable(dataframe, groupby):
@@ -415,10 +425,13 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir):
         sns.heatmap(facet_data, cmap="YlGnBu", **kws)
         g.set_xticklabels(rotation=xrotation)
 
-    with sns.plotting_context(font_scale=10):
+    # todo: this doesn't seem to be changing the font size.  Probably isn't
+    # for other plotting calls either!
+    with sns.plotting_context(font_scale=40):
         g = sns.FacetGrid(dataframe,
                           col='rep',
                           row='oxy',
+                          # TODO: adjust size depending on # of unique rows
                           size=10,
                           aspect=.5,
                           margin_titles=True)
@@ -437,18 +450,21 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir):
     g.fig.subplots_adjust(bottom=0.2)
 
     # room for colorbar (cbar)
-    g.fig.subplots_adjust(right=0.85)
+    g.fig.subplots_adjust(right=0.9)
 
     # add a supertitle, you bet.
-    plt.subplots_adjust(top=0.93)
-    supertitle = phylo_dict_to_descriptive_string(phylo_dict)
+    plt.subplots_adjust(top=0.95)
+    supertitle_base = phylo_dict_to_descriptive_string(phylo_dict)
+    supertitle = \
+        supertitle_base + '.  Min abundance cutoff = {}'.format(low_cutoff)
     g.fig.suptitle(supertitle, size=15)
 
     # Also summarise # of taxa rows being grouped together.
 
     # prepare filename and save.
     plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
-    filepath = plot_dir + supertitle
+    filepath = plot_dir + supertitle_base
+    filepath += "--min_{}".format(low_cutoff)
     filepath += "--{}".format('x-week')
     filepath += ".pdf"
     print(filepath)
