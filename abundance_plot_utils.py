@@ -355,7 +355,7 @@ def label_from_phylo_colnames(*args):
         return name_string[:-2]
     else:
         #print('all fields empty.  returning "?"')
-        return '?'
+        return 'other'
 
 
 def heatmap_all_below(dataframe, phylo_dict, plot_dir, low_cutoff=0.001):
