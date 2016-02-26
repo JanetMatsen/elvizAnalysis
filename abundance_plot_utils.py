@@ -374,23 +374,21 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir):
     dataframe.fillna('unknown', inplace=True)
 
 
-    # dataframe['name_string'] = ""
-    # for colname in label_cols:
-    #     dataframe['name_string'] = dataframe['name_string'] + \
-    #                                dataframe[colname]
-    #     dataframe['']
-
-
     # make a summary string representing the phylogeny for everything below
-    # the level specified by phylo_level
-    # First remove too broad of phylogeny.
-    # for p_level in phylo_levels_above(phylo_level):
-    #     del dataframe[p_level]
+
+    def label_building_lambda(f, columns):
+        """
+        Returns a lambda function to make row labels from.
+        :param f: function to make a lambda out of.
+        :param columns: column names to pass to function f in the lambda
+        :return: function
+        """
+        return lambda row: f(*(row[col] for col in columns))
 
     # TODO: use the phylo_dict to get the columns to use!
     dataframe['name_string'] = dataframe.apply(
-        lambda row: label_from_phylo_colnames(row['Family'],
-                                              row['Genus']), axis=1)
+        label_building_lambda(f=label_from_phylo_colnames,
+                              columns=label_cols), axis=1)
 
     # Plot as usual, using the stuff developed above.
     # todo: factor some of this??
@@ -417,7 +415,7 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir):
         sns.heatmap(facet_data, cmap="YlGnBu", **kws)
         g.set_xticklabels(rotation=xrotation)
 
-    with sns.plotting_context(font_scale=7):
+    with sns.plotting_context(font_scale=10):
         g = sns.FacetGrid(dataframe,
                           col='rep',
                           row='oxy',
@@ -426,7 +424,7 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir):
                           margin_titles=True)
 
     # Add axes for the colorbar.  [left, bottom, width, height]
-    cbar_ax = g.fig.add_axes([.92, .3, .02, .4], title='abundance')
+    cbar_ax = g.fig.add_axes([.94, .3, .02, .4], title='abundance')
 
     g = g.map_dataframe(facet_heatmap,
                         cbar_ax=cbar_ax, vmin=0, annot=False,
@@ -442,7 +440,7 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir):
     g.fig.subplots_adjust(right=0.85)
 
     # add a supertitle, you bet.
-    plt.subplots_adjust(top=0.80)
+    plt.subplots_adjust(top=0.93)
     supertitle = phylo_dict_to_descriptive_string(phylo_dict)
     g.fig.suptitle(supertitle, size=15)
 
@@ -451,7 +449,7 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir):
     # prepare filename and save.
     plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
     filepath = plot_dir + supertitle
-    filepath += "--{}".format('week')
+    filepath += "--{}".format('x-week')
     filepath += ".pdf"
     print(filepath)
     g.fig.savefig(filepath)
