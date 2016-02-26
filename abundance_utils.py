@@ -236,18 +236,25 @@ def reduce_to_genus_only(dataframe):
     return dataframe_genus
 
 
-def filter_by_abundance(data, column, high, low):
+def filter_by_abundance(data, abundance_column, high, low,
+                        phylo_column='Genus'):
     """
-    Return only rows where genera have one value of 
-    abundance in range(low, high)
+    Return only rows where the specified phylo_colum's set of rows have at
+    least one value of abundance_column in range(low, high)
 
     :param data: dataframe to filter
-    :param column: column to filter by.  Genus?
+    :param abundance_column: column to filter by.  Genus?
+    :param phylo_column: column to grab unique values from.  Defaults to
+    'Genus' for historical reasons.
     :param high: highest abundance to look for
     :param low: lowest abundance to look for
     :return: dataframe
     """
-    species_to_keep = data[(data[column] <= high) &
-                           (data[column] >= low)]['Genus'].unique()
-    print(species_to_keep[0:5])
-    return data[data['Genus'].isin(species_to_keep)]
+    # get a list of the phylo_column names that meet our criteria.
+    phylo_colum_values_to_keep = \
+        data[(data[abundance_column] <= high) &
+             (data[abundance_column] >= low)][phylo_column].unique()
+    print(phylo_colum_values_to_keep[0:5])
+    # Return ALL rows for a phylo_column label if any of the rows had an
+    # abundance value in the desired range.
+    return data[data[phylo_column].isin(phylo_colum_values_to_keep)]
