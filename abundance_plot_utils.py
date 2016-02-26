@@ -358,11 +358,11 @@ def label_from_phylo_colnames(*args):
         return '?'
 
 
-def heatmap_all_below(dataframe, phylo_dict):
+def heatmap_all_below(dataframe, phylo_dict, plot_dir):
     # grab the data for that phylo:
     # for now assume jusst 1 key and 1 value.
     phylo_level = list(phylo_dict.keys())[0]
-    phylo_name = list(phylo_dict.values())[0]
+    phylo_name = list(phylo_dict.values())[0][0]
     dataframe = dataframe[dataframe[phylo_level] == phylo_name]
     print(dataframe.head())
 
@@ -387,6 +387,7 @@ def heatmap_all_below(dataframe, phylo_dict):
     # for p_level in phylo_levels_above(phylo_level):
     #     del dataframe[p_level]
 
+    # TODO: use the phylo_dict to get the columns to use!
     dataframe['name_string'] = dataframe.apply(
         lambda row: label_from_phylo_colnames(row['Family'],
                                               row['Genus']), axis=1)
@@ -432,7 +433,7 @@ def heatmap_all_below(dataframe, phylo_dict):
                         groupby='week',
                         xrotation=0)
 
-    g.set_axis_labels('abcdefg')
+    g.set_axis_labels('week')
 
     # add space for x label
     g.fig.subplots_adjust(bottom=0.2)
@@ -448,7 +449,7 @@ def heatmap_all_below(dataframe, phylo_dict):
     # Also summarise # of taxa rows being grouped together.
 
     # prepare filename and save.
-    plot_dir = elviz_utils.prepare_plot_dir('abc') #plot_dir)
+    plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
     filepath = plot_dir + supertitle
     filepath += "--{}".format('week')
     filepath += ".pdf"
