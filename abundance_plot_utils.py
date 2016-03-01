@@ -216,8 +216,10 @@ def phylo_dict_to_descriptive_string(phylo_dict):
 
 
 def plot_across_phylogeny(dataframe, phylo_dict,
-                          facet='week', annotate=True,
-                          plot_dir='./plots'):
+                          facet='rep', annotate=True,
+                          plot_dir='./plots/mixed_phylogeny/',
+                          size_spec=False,
+                          aspect_spec=False):
 
     # todo: What happens if you submit a Genus for something you also
     # submitted an order for???   For now assume the user is smarter than that.
@@ -283,6 +285,11 @@ def plot_across_phylogeny(dataframe, phylo_dict,
         x_axis_label = 'week'
     # todo: make wider if annotate = True.
 
+    if size_spec:
+        size = size_spec
+    if aspect_spec:
+        aspect = aspect_spec
+
     with sns.plotting_context(font_scale=7):
         g = sns.FacetGrid(plot_data,
                           col=facet,
@@ -319,7 +326,7 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     # add a supertitle, you bet.
     plt.subplots_adjust(top=0.80)
     supertitle = phylo_dict_to_descriptive_string(phylo_dict)
-    g.fig.suptitle(supertitle, size=15)
+    g.fig.suptitle(supertitle, size=20)
 
     # Also summarise # of taxa rows being grouped together.
 
