@@ -69,8 +69,10 @@ def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
 
     g = g.map_dataframe(facet_heatmap,
                         cbar_ax=cbar_ax, vmin=0,
-                        # Specify the colorbar axes and limits
-                        vmax=max(dataframe.abundance))
+                        # specivy vmax = max abundance seen or each will
+                        # have its own scale (and you might not know it!)
+                        vmax=dataframe['abundance'].max(),
+                        )
 
     g.set_titles(col_template="{col_name}", fontweight='bold', fontsize=18)
     g.set_axis_labels('week')
@@ -226,6 +228,11 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     plot_data = aggregate_mixed_phylogeny(dataframe=dataframe,
                                           phylo_dict=phylo_dict)
 
+    # store the maximum abundance level.  We will need to tell all the
+    # sub-heat maps to use this same maximum so they aren't each on their
+    # own scale.
+    max_abundance = plot_data['abundance sum'].max()
+
     # The data is seperated by these two variables.
     # The one not used as the facet will be used as the columns in the
     # subplot.
@@ -283,14 +290,13 @@ def plot_across_phylogeny(dataframe, phylo_dict,
         aspect = 1.2
         space_for_cbar = 0.85
         x_axis_label = 'week'
-    # todo: make wider if annotate = True.
 
     if size_spec:
         size = size_spec
     if aspect_spec:
         aspect = aspect_spec
 
-    with sns.plotting_context(font_scale=7):
+    with sns.plotting_context(font_scale=8):
         g = sns.FacetGrid(plot_data,
                           col=facet,
                           row='oxy',
@@ -302,7 +308,11 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     cbar_ax = g.fig.add_axes([.92, .3, .02, .4], title='abundance')
 
     g = g.map_dataframe(facet_heatmap,
-                        cbar_ax=cbar_ax, vmin=0, annot=annotate,
+                        cbar_ax=cbar_ax,
+                        # NEED vmax = MAX ABUNDANCE or each plot will have
+                        # its own color scale!
+                        vmin=0, vmax=max_abundance,
+                        annot=annotate,
                         groupby=cols_in_facet,
                         xrotation=xrotation)
 
@@ -326,7 +336,7 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     # add a supertitle, you bet.
     plt.subplots_adjust(top=0.80)
     supertitle = phylo_dict_to_descriptive_string(phylo_dict)
-    g.fig.suptitle(supertitle, size=20)
+    g.fig.suptitle(supertitle, size=16)
 
     # Also summarise # of taxa rows being grouped together.
 
@@ -334,6 +344,8 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
     filepath = plot_dir + supertitle
     filepath += "--{}".format(facet)
+    if annotate:
+        filepath += "--annotated"
     filepath += ".pdf"
     print(filepath)
     g.fig.savefig(filepath)
@@ -447,7 +459,11 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir, low_cutoff=0.001):
     cbar_ax = g.fig.add_axes([.94, .3, .02, .4], title='abundance')
 
     g = g.map_dataframe(facet_heatmap,
-                        cbar_ax=cbar_ax, vmin=0, annot=False,
+                        cbar_ax=cbar_ax, vmin=0,
+                        # MUST SET VMAX or all of the subplots will be on
+                        # their own color scale and you might not know it.
+                        vmax=dataframe['abundance'].max(),
+                        annot=False,
                         groupby='week',
                         xrotation=0)
 
