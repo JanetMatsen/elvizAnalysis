@@ -78,7 +78,7 @@ def read_elviz_CSVs(directory):
     for filename in elviz_files:
         print(filename)
         # read the dataframe from the csv
-        df = read_elviz_CSV("./data/" + filename)
+        df = read_elviz_CSV(directory + filename)
         df['Log10 Average fold'] = numpy.log10(df['Average fold'])
         elviz_data[filename] = df
     return elviz_data
