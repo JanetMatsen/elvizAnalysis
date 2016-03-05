@@ -167,6 +167,10 @@ def sum_on_phylogeny(dataframe, phylo_level, name):
 
 
 def aggregate_mixed_phylogeny(dataframe, phylo_dict):
+    # original inspiration:
+    #{'Phylum':['Bacteroidetes'],
+    # 'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
+
     # Loop over the different phylogenetic levels specified.
     # Make a list of each dataframe that will be concatenated.
     reduced_data = []
