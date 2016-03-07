@@ -78,7 +78,7 @@ def read_elviz_CSVs(directory):
     for filename in elviz_files:
         print(filename)
         # read the dataframe from the csv
-        df = read_elviz_CSV("./data/" + filename)
+        df = read_elviz_CSV(directory + filename)
         df['Log10 Average fold'] = numpy.log10(df['Average fold'])
         elviz_data[filename] = df
     return elviz_data
@@ -96,7 +96,7 @@ def read_pickle_or_CSVs(pickle_filename, CSV_directory):
     else:
         # OK, no pickle found, do it the hard way
         print("reading in all Elviz CSV files")
-        elviz_data = read_elviz_CSVs(DATA_DIR)
+        elviz_data = read_elviz_CSVs(CSV_directory)
         # assemble the uber frame
         print("concatenating data frames prior to normalization")
         # create a combined dataframe from all the CSV files

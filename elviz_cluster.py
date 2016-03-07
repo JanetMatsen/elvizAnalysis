@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 """
 
@@ -16,6 +16,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import scipy.spatial.distance
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
+from sklearn import mixture
 from sklearn.datasets.samples_generator import make_blobs
 from sklearn.preprocessing import StandardScaler
 
@@ -31,6 +32,7 @@ RESULTS_DIR = './results/'  # location of results output
 HEURISTIC_SAMPlE_SIZE = 10
 HEURISTIC_PDF = 'heuristic.pdf'
 HEURISTIC_PICKLE = 'data/heuristic.pkl'
+DPGMM_N_COMPONENTS = 3
 
 CLUSTER_COLUMNS = ['Average fold', 'Reference GC']
 
@@ -125,19 +127,24 @@ def plot_clusters(pdf, df, title, labels, core_samples_mask, limits):
 
 
 def main(argv):
-    heuristic_mode = False
+    dbscan_heuristic_mode = False
+    dpgmm_mode = False
     try:
         opts, args = getopt.getopt(argv,"he")
     except getopt.GetoptError:
-        print('elviz_cluster.py [-h] [-e]')
+        print('elviz_cluster.py [-h] [-e] [-g]')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
             print('elviz_cluster.py [-h] [-e]')
-            print('  -h = help, -e = run epsilon heuristic plot generation code')
+            print('  -h = help, -e = run dbscan' +
+                  ' epsilon heuristic plot generation code')
+            print('  -g = use a DPGMM for clustering')
             sys.exit()
         elif opt == '-e':
-            heuristic_mode = True
+            dbscan_heuristic_mode = True
+        elif opt == '-g':
+            dpgmm_mode = True
 
     [elviz_data, combined_df] = read_pickle_or_CSVs(DATA_PICKLE, RAW_DATA_DIR)
 
@@ -154,7 +161,7 @@ def main(argv):
     scaler = StandardScaler().fit(combined_df[CLUSTER_COLUMNS])
     # serializing outputs
 
-    if heuristic_mode:
+    if dbscan_heuristic_mode:
         print("making DBSCAN heuristic plots")
         dbscan_heuristic(elviz_data, scaler)
         os.sys.exit()
@@ -183,7 +190,12 @@ def main(argv):
                 # reuse the scaler we created from all of the data for the transform
                 tax_rows_cluster_columns = scaler.transform(tax_rows[CLUSTER_COLUMNS])
 
-                db = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES).fit(tax_rows_cluster_columns)
+                if not dpgmm_mode:
+                    db = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES)
+                else:
+                    db = mixture.GPGMM(n_components=DPGMM_N_COMPONENTS,
+                                       covariance_type='full')
+                db.fit(tax_rows_cluster_columns)
                 core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
                 core_samples_mask[db.core_sample_indices_] = True
                 labels = db.labels_
