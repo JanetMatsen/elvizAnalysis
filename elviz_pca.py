@@ -8,14 +8,16 @@ from sklearn.decomposition import PCA
 from elviz_utils import read_sample_info
 
 
-def import_elviz_data(genus_only=True):
+def import_elviz_data(genus_only=True, main_dir='./'):
     """
     Read pandas data from summarised table
     :param genus_only: import data summarised to genus (True) or all scaffolds
     :return: pandas dataframe
     """
 
-    df = pd.read_csv("./results/reduced_data--all_phylogeny_remains.csv")
+    path_to_csv = main_dir + "/results/reduced_data--all_phylogeny_remains.csv"
+    print('loading {}'.format(path_to_csv))
+    df = pd.read_csv(path_to_csv)
 
     if genus_only:
         df = pd.DataFrame(
@@ -84,23 +86,23 @@ def most_variant_genera_for_pca(data, top_percent):
     return data.head(num_rows_to_keep)
 
 
-def colnames_to_sample_info_array(dataframe):
+def colnames_to_sample_info_array(dataframe, main_dir='./'):
     col_df = pd.DataFrame({'ID': dataframe.reset_index().ID})
-    sample_info = read_sample_info()
+    sample_info = read_sample_info(main_dir=main_dir)
     return pd.merge(col_df, sample_info, how='left')
 
 
-def sort_by_variance(genus_only=True):
+def sort_by_variance(main_dir='./', genus_only=True):
     # TODO: does more than sort; should rename this.
-    df = import_elviz_data(genus_only=genus_only)
+    df = import_elviz_data(main_dir=main_dir, genus_only=genus_only)
     df = pivot_for_pca(df, genus_only=genus_only)
     df['variance'] = df.var(axis=1)
     df.sort_values(by='variance', ascending=False, inplace=True)
     return df
 
 
-def plot_variance(log=True, genus_only=True):
-    df = sort_by_variance(genus_only=genus_only)
+def plot_variance(main_dir='./', log=True, genus_only=True):
+    df = sort_by_variance(main_dir=main_dir, genus_only=genus_only)
     fig, ax = plt.subplots()
     df.reset_index().variance.plot(ax=ax, kind='hist', bins=100)
     if log:
@@ -108,13 +110,13 @@ def plot_variance(log=True, genus_only=True):
     plt.title('distribution of variances (log scale)')
     plt.xlabel("variance for genera's abundance across all samples")
     plt.ylabel("frequency (log scale)")
-    plt.savefig('./plots/distribution_of_sample-wise_variances.pdf')
+    plt.savefig(main_dir + '/plots/distribution_of_sample-wise_variances.pdf')
 
 
-def run_pca(top_percent=20, genus_only=True):
+def run_pca(main_dir='./', top_percent=20, genus_only=True):
     # get data
     # has a variance column tacked on.
-    df = sort_by_variance(genus_only=genus_only)
+    df = sort_by_variance(main_dir=main_dir, genus_only=genus_only)
 
     # drop rows that don't have sum of abundances in the top %.
     pca_input = most_variant_genera_for_pca(data=df, top_percent=top_percent)
@@ -140,13 +142,15 @@ def run_pca(top_percent=20, genus_only=True):
 
 
 def plot_pca_results(top_percent=20, genus_only=False,
-                     facet_row=True, uniform_axes=True, savefig=True):
+                     facet_row=True, uniform_axes=True, main_dir='./',
+                     savefig=True):
     # get data that's ready for PCA:
     pca_input, data_transformed, variances = \
-        run_pca(top_percent=top_percent, genus_only=genus_only)
+        run_pca(main_dir=main_dir, top_percent=top_percent,
+                genus_only=genus_only)
 
     # import the sample info needed to map features to sample IDs.
-    sample_info = colnames_to_sample_info_array(pca_input)
+    sample_info = colnames_to_sample_info_array(pca_input, main_dir=main_dir)
 
     # prepare axis labels, which also serve as dataframe column names.
     x_axis_label = 'principal component 1 ({0:.0%})'.format(variances[0])
@@ -209,7 +213,7 @@ def plot_pca_results(top_percent=20, genus_only=False,
     print(plot_args)
     g = base_plot(**plot_args)
 
-    filename = './plots/pca_of_top_{}_percent--'.format(top_percent)
+    filename = main_dir + '/plots/pca_of_top_{}_percent--'.format(top_percent)
 
     # prepare a filename, depending on whether all phylogeny or only genus
     # is used.

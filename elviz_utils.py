@@ -33,18 +33,20 @@ IMPORT_METAINFO_TYPES = {'ID': 'str',
                          'project': 'int'}
 
 
-def read_sample_info():
-    '''
+def read_sample_info(main_dir='./'):
+    """
     Read in sample_meta_info.tsv using particular dtypes
-    '''
-    return pd.read_csv('./raw_data/sample_meta_info.tsv',
+
+    :param main_dir: directory with the analysis
+    """
+    return pd.read_csv(main_dir + 'raw_data/sample_meta_info.tsv',
                        dtype=IMPORT_METAINFO_TYPES,
                        sep='\t')
 
 
 def read_elviz_CSV(filename):
     df = pd.read_csv(filename, sep=",", dtype=IMPORT_DATA_TYPES)
-    # repalce nans with ""
+    # replace nans with ""
     df.fillna("", inplace=True)
     return df
 

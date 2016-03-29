@@ -166,7 +166,7 @@ def sum_on_phylogeny(dataframe, phylo_level, name):
     return aggregated_rows
 
 
-def aggregate_mixed_phylogeny(dataframe, phylo_dict):
+def aggregate_mixed_phylogeny(dataframe, phylo_dict, main_dir='./'):
     # Loop over the different phylogenetic levels specified.
     # Make a list of each dataframe that will be concatenated.
     reduced_data = []
@@ -195,7 +195,8 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict):
     # Concatenate data
     dataframe = pd.concat(reduced_data)
     # merge on the sample info.
-    dataframe = pd.merge(left=dataframe, right=elviz_utils.read_sample_info())
+    dataframe = pd.merge(left=dataframe,
+                         right=elviz_utils.read_sample_info(main_dir))
 
     return dataframe
 
@@ -219,6 +220,7 @@ def phylo_dict_to_descriptive_string(phylo_dict):
 
 def plot_across_phylogeny(dataframe, phylo_dict,
                           facet='rep', annotate=True,
+                          main_dir='./',
                           plot_dir='./plots/mixed_phylogeny/',
                           size_spec=False,
                           aspect_spec=False):
@@ -226,7 +228,8 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     # todo: What happens if you submit a Genus for something you also
     # submitted an order for???   For now assume the user is smarter than that.
     plot_data = aggregate_mixed_phylogeny(dataframe=dataframe,
-                                          phylo_dict=phylo_dict)
+                                          phylo_dict=phylo_dict,
+                                          main_dir=main_dir)
 
     # store the maximum abundance level.  We will need to tell all the
     # sub-heat maps to use this same maximum so they aren't each on their
