@@ -51,21 +51,19 @@ def reduce_elviz_to_genus_rpk(df):
     # rename NaN at Genus to "other"  
     df.Genus.replace('', "other", inplace=True)
 
-    # calculate RPK: sum the reads that mapped to the plus strand
-    # and minus strand
-    df['reads per kilobase'] = (df['Plus reads'] +
-                                df['Minus reads']) / (df['Length'] / 1000.)
+    # sum the reads that mapped to the plus strand and minus strand
+    df['reads'] = df['Plus reads'] + df['Minus reads']
 
-    # Sum lengths and reads per kilobase.
+    # Sum lengths and reads.
     df = df.groupby(['Kingdom', 'Phylum', 'Class', 'Order',
-                     'Family', 'Genus'])['Length', 'reads per kilobase'].sum()
+                     'Family', 'Genus'])['Length', 'reads'].sum()
 
     # sort to put the highest ones at the top (useful for debugging)
-    df.sort_values(by='reads per kilobase', axis=0,
+    df.sort_values(by='reads', axis=0,
                    inplace=True, ascending=False)
 
     # rename our new measure of abundance: 
-    df.rename(columns={'reads per kilobase': 'sum of reads per kilobase'},
+    df.rename(columns={'reads': 'sum of reads'},
               inplace=True)
     return df.reset_index()
 
@@ -109,15 +107,15 @@ def read_and_reduce_elviz_csv(filename, filepath, sample_info):
     sample_info.set_index(['project'])
     # merge to get sample_info on
     df = df.groupby('project').apply(normalize_groupby,
-                                     'sum of reads per kilobase')
+                                     'sum of reads')
 
     df = pd.merge(df, sample_info, how='left')
 
     # rename column to abundance since we normalized it.
-    df.rename(columns={'sum of reads per kilobase': 'abundance'}, inplace=True)
+    df.rename(columns={'sum of reads': 'fraction of reads'}, inplace=True)
 
     # sort so most abundant is on top. 
-    df.sort_values(by='abundance', axis=0, ascending=False, inplace=True)
+    df.sort_values(by='fraction of reads', axis=0, ascending=False, inplace=True)
 
     return df
 
@@ -148,10 +146,10 @@ def read_and_reduce_all(filename_list, filepath, sample_info):
         print("Warning!  only {} samples loaded.".format(
             len(dataframe.ID.unique())))
 
-    # make sure all the abundances add up to 1 for each sample ID
+    # make sure all the fraction of reads add up to 1 for each sample ID
     for t, d in dataframe.groupby('ID'):
-        if abs(1 - d['abundance'].sum()) > 0.01:
-            print('warning: abundance(s) may not sum to 1')
+        if abs(1 - d['fraction of reads'].sum()) > 0.01:
+            print('warning: fraction of reads(s) may not sum to 1')
 
     return dataframe
 
@@ -173,7 +171,7 @@ def prepare_excel_writer_dict(dataframe, filepath, by_genus=False):
     Prepare a dictionary of Pandas ExcelWriters for each replicate at each
     oxygen level.
 
-    :param dataframe: aggregated abundances dataframe
+    :param dataframe: aggregated fraction of reads dataframe
     :param filepath: filepath to store .xlsx files
     :param by_genus: whether data has been reduced to genus level before
     aggregating.
@@ -231,7 +229,7 @@ def reduce_to_genus_only(dataframe):
     dataframe_genus = dataframe_genus.groupby(['ID', 'rep',
                                                'week', 'oxy',
                                                'Genus']).sum().reset_index()
-    dataframe_genus.sort_values(by=['rep', 'abundance'], inplace=True,
+    dataframe_genus.sort_values(by=['rep', 'fraction of reads'], inplace=True,
                                 ascending=False)
     return dataframe_genus
 

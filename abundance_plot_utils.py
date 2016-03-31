@@ -28,9 +28,10 @@ def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
     if rep is not 'all':
         print("keep only replicate levels:", rep)
         dataframe = dataframe[dataframe['rep'].isin(rep)]
-    dataframe = abundance_utils.filter_by_abundance(data=dataframe,
-                                                    abundance_column='abundance',
-                                                    high=high, low=low)
+    dataframe = abundance_utils.filter_by_abundance(
+        data=dataframe,
+        abundance_column='fraction of reads',
+        high=high, low=low)
     dataframe['facet_replicate'] = 'replicate ' + dataframe['rep'].astype(str)
 
     # make height of the plot a function of the number of rows (Genera):
@@ -54,7 +55,7 @@ def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
         """
 
         facet_data = data.pivot(index='Genus', columns='week',
-                                values='abundance')
+                                values='fraction of reads')
         # Pass kwargs to heatmap  cmap used to be 'Blue'
         sns.heatmap(facet_data, cmap="YlGnBu", **kws)
 
@@ -65,13 +66,13 @@ def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
         g.set_xticklabels(rotation=90)
 
     # Create a colorbar axes
-    cbar_ax = g.fig.add_axes([.94, .3, .02, .4], title='abundance')
+    cbar_ax = g.fig.add_axes([.94, .3, .02, .4], title='fraction \n of reads')
 
     g = g.map_dataframe(facet_heatmap,
                         cbar_ax=cbar_ax, vmin=0,
-                        # specivy vmax = max abundance seen or each will
+                        # specify vmax = max abundance seen or each will
                         # have its own scale (and you might not know it!)
-                        vmax=dataframe['abundance'].max(),
+                        vmax=dataframe['fraction of reads'].max(),
                         )
 
     g.set_titles(col_template="{col_name}", fontweight='bold', fontsize=18)
@@ -82,7 +83,7 @@ def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
 
     # add a supertitle, you bet.
     plt.subplots_adjust(top=0.80)
-    supertitle = str(low) + ' < abundance < ' + str(
+    supertitle = str(low) + ' < fraction of reads < ' + str(
         high) + ', {} oxygen'.format(oxy)
     g.fig.suptitle(supertitle, size=18)
 
@@ -161,7 +162,7 @@ def sum_on_phylogeny(dataframe, phylo_level, name):
 
     # sum all
     aggregated_rows = relevant_rows.groupby(
-        [phylo_level, 'ID'])['abundance'].sum()
+        [phylo_level, 'ID'])['fraction of reads'].sum()
 
     return aggregated_rows
 
@@ -188,10 +189,11 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict, main_dir='./'):
             del reduced_rows[key]
             # make a new dataframe out of it.
             reduced_data.append(
-                pd.DataFrame({'phylogenetic level': key,
-                              'phylogenetic name': name,
-                              'abundance sum': reduced_rows['abundance'],
-                              'ID': reduced_rows['ID']}))
+                pd.DataFrame(
+                    {'phylogenetic level': key,
+                    'phylogenetic name': name,
+                    'abundance sum': reduced_rows['fraction of reads'],
+                    'ID': reduced_rows['ID']}))
     # Concatenate data
     dataframe = pd.concat(reduced_data)
     # merge on the sample info.
@@ -221,7 +223,7 @@ def phylo_dict_to_descriptive_string(phylo_dict):
 def plot_across_phylogeny(dataframe, phylo_dict,
                           facet='rep', annotate=True,
                           main_dir='./',
-                          plot_dir='./plots/mixed_phylogeny/',
+                          plot_dir='/plots/mixed_phylogeny/',
                           size_spec=False,
                           aspect_spec=False):
 
@@ -308,7 +310,7 @@ def plot_across_phylogeny(dataframe, phylo_dict,
                           margin_titles=True)
 
     # Add axes for the colorbar.  [left, bottom, width, height]
-    cbar_ax = g.fig.add_axes([.92, .3, .02, .4], title='abundance')
+    cbar_ax = g.fig.add_axes([.92, .3, .02, .4], title='fraction \n of reads')
 
     g = g.map_dataframe(facet_heatmap,
                         cbar_ax=cbar_ax,
@@ -344,7 +346,8 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     # Also summarise # of taxa rows being grouped together.
 
     # prepare filename and save.
-    plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
+    plot_dir = elviz_utils.prepare_plot_dir(main_dir + plot_dir)
+    print("plot directory: {}".format(plot_dir))
     filepath = plot_dir + supertitle
     filepath += "--{}".format(facet)
     if annotate:
@@ -427,7 +430,7 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir, low_cutoff=0.001):
     def pivot_so_columns_are_plotting_variable(dataframe, groupby):
         return dataframe.pivot(index='name_string',
                                columns=groupby,
-                               values='abundance')
+                               values='fraction of reads')
 
     def facet_heatmap(data, groupby, xrotation, **kws):
         """
@@ -459,13 +462,13 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir, low_cutoff=0.001):
                           margin_titles=True)
 
     # Add axes for the colorbar.  [left, bottom, width, height]
-    cbar_ax = g.fig.add_axes([.94, .3, .02, .4], title='abundance')
+    cbar_ax = g.fig.add_axes([.94, .3, .02, .4], title='fraction \n of reads')
 
     g = g.map_dataframe(facet_heatmap,
                         cbar_ax=cbar_ax, vmin=0,
                         # MUST SET VMAX or all of the subplots will be on
                         # their own color scale and you might not know it.
-                        vmax=dataframe['abundance'].max(),
+                        vmax=dataframe['fraction of reads'].max(),
                         annot=False,
                         groupby='week',
                         xrotation=0)
@@ -482,7 +485,7 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir, low_cutoff=0.001):
     plt.subplots_adjust(top=0.95)
     supertitle_base = phylo_dict_to_descriptive_string(phylo_dict)
     supertitle = \
-        supertitle_base + '.  Min abundance cutoff = {}'.format(low_cutoff)
+        supertitle_base + '.  Min fraction of reads cutoff = {}'.format(low_cutoff)
     g.fig.suptitle(supertitle, size=15)
 
     # Also summarise # of taxa rows being grouped together.
