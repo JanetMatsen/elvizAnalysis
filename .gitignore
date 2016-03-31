@@ -5,3 +5,4 @@
 *.pkl
 /results/*.xlsx
 /retired/*
+ipython_notebooks/depreciated/
