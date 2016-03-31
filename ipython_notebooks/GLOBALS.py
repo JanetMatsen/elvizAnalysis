@@ -7,6 +7,6 @@ sys.path.append(module_dir)
 
 # define the plot dir
 MAIN_DIR = '../'
-PLOT_DIR = '../plots'
+PLOT_DIR = '/plots'
 RAW_DATA_DIR = '../raw_data/'
 
