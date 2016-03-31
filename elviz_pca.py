@@ -21,11 +21,11 @@ def import_elviz_data(genus_only=True, main_dir='./'):
 
     if genus_only:
         df = pd.DataFrame(
-            df.groupby(['Genus', 'ID'])['abundance'].sum())
+            df.groupby(['Genus', 'ID'])['fraction of reads'].sum())
     else:
         df = pd.DataFrame(
             df.groupby(['Kingdom', 'Phylum', 'Class', 'Order', 'Family',
-                        'Genus', 'ID'])['abundance'].sum())
+                        'Genus', 'ID'])['fraction of reads'].sum())
     return df
 
 
@@ -39,13 +39,13 @@ def pivot_for_pca(dataframe, genus_only=True):
     if genus_only:
         dataframe.reset_index(inplace=True)
         dataframe = dataframe.pivot(index='Genus', columns='ID',
-                                    values='abundance')
+                                    values='fraction of reads')
     else:
         dataframe = dataframe.unstack(6)
         # dataframe = dataframe.pivot(
         #     index=['Kingdom','Phylum','Class','Order','Family','Genus'],
         #     #columns='ID',
-        #     values='abundance')
+        #     values='fraction of reads')
 
     # fill NA values with 0.
     return dataframe.fillna(0)
