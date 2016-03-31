@@ -191,9 +191,9 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict, main_dir='./'):
             reduced_data.append(
                 pd.DataFrame(
                     {'phylogenetic level': key,
-                    'phylogenetic name': name,
-                    'abundance sum': reduced_rows['fraction of reads'],
-                    'ID': reduced_rows['ID']}))
+                     'phylogenetic name': name,
+                     'abundance sum': reduced_rows['fraction of reads'],
+                     'ID': reduced_rows['ID']}))
     # Concatenate data
     dataframe = pd.concat(reduced_data)
     # merge on the sample info.
@@ -365,25 +365,25 @@ def label_from_phylo_colnames(*args):
         'Burkholderiales_Comamonadaceae_other', or
     ['Burkholderiales', NaN, 'other']
     """
-    #print('args: {}'.format(args))
     name_string = ""
     for name in args:
         if name != 'other':
             if name != 'unknown':
-                #if not math.isnan(name):   #np.isnan(name):
-                #print('adding name {}'.format(name))
+                # if not math.isnan(name):   #np.isnan(name):
+                # print('adding name {}'.format(name))
                 name_string += name
                 name_string += ", "
     # remove the last ", "
     if len(name_string) > 0:
-        #print('length of {} is > 0'.format(name_string))
+        # print('length of {} is > 0'.format(name_string))
         return name_string[:-2]
     else:
-        #print('all fields empty.  returning "?"')
+        # print('all fields empty.  returning "?"')
         return 'other'
 
 
-def heatmap_all_below(dataframe, phylo_dict, plot_dir, low_cutoff=0.001):
+def heatmap_all_below(dataframe, phylo_dict, plot_dir,
+                      main_dir='.', low_cutoff=0.001):
     # grab the data for that phylo:
     # for now assume jusst 1 key and 1 value.
     phylo_level = list(phylo_dict.keys())[0]
@@ -397,7 +397,6 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir, low_cutoff=0.001):
 
     # change nan cells to 'unknown'
     dataframe.fillna('unknown', inplace=True)
-
 
     # make a summary string representing the phylogeny for everything below
 
@@ -420,7 +419,8 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir, low_cutoff=0.001):
     # todo: allow high to change?
     dataframe = \
         abundance_utils.filter_by_abundance(data=dataframe,
-                                            abundance_column='abundance',
+                                            abundance_column='fraction of '
+                                                             'reads',
                                             high=1,
                                             low=low_cutoff,
                                             phylo_column='name_string')
@@ -485,13 +485,14 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir, low_cutoff=0.001):
     plt.subplots_adjust(top=0.95)
     supertitle_base = phylo_dict_to_descriptive_string(phylo_dict)
     supertitle = \
-        supertitle_base + '.  Min fraction of reads cutoff = {}'.format(low_cutoff)
+        supertitle_base + '.  Min fraction of reads cutoff = {}'.format(
+            low_cutoff)
     g.fig.suptitle(supertitle, size=15)
 
     # Also summarise # of taxa rows being grouped together.
 
     # prepare filename and save.
-    plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
+    plot_dir = elviz_utils.prepare_plot_dir(main_dir + plot_dir)
     filepath = plot_dir + supertitle_base
     filepath += "--min_{}".format(low_cutoff)
     filepath += "--{}".format('x-week')
