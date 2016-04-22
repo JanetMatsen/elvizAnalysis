@@ -1,0 +1,27 @@
+#!/bin/bash
+
+HOST=`mysql_host`
+DB=metagenomes
+
+files=`find ./results -name 'elviz*dat'`
+
+n_files=0
+for file in $files
+do
+	#echo $file
+	outfile=`echo $file | sed "s/dat/fna/g"`
+	organism=`echo $file | awk -F'.' '{ print $3 }'`
+	contig_list=`awk '{ printf("\"%s\", ", $1); } END { printf("\"fakevaluethatdoesntexist\""); }' $file`
+	#echo $organism
+	#echo $contigs
+	cat << EOF | mysql -s -h $HOST $DB  | awk -v organism="$organism" '{ gsub($1, $2, ""); printf(">%s [organism=%s]\n%s\n", $1, organism, $2); }' > $outfile
+SELECT locus, sequence FROM sequences WHERE locus IN ($contig_list);
+EOF
+	n_files=$(( $n_files + 1))
+	modulo=$(( $n_files % 100 ))
+	if [ "$modulo" -eq 0 ]
+	then
+			echo processed 100 files
+	fi
+done
+echo processed $n_files files
