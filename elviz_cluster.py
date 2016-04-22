@@ -23,7 +23,7 @@ from sklearn.preprocessing import StandardScaler
 from elviz_utils import IMPORT_DATA_TYPES, read_elviz_CSV, read_elviz_CSVs, read_pickle_or_CSVs
 
 MIN_ROWS = 20
-EPS = .5
+EPS = .3
 MIN_SAMPLES = 4
 MAX_AVG_FOLD = 500  # I've seen over 20k, 500 seems to be 2x typical
 DATA_PICKLE = 'data/data.pkl'  # filename of previously parsed data
@@ -32,9 +32,10 @@ RESULTS_DIR = './results/'  # location of results output
 HEURISTIC_SAMPlE_SIZE = 10
 HEURISTIC_PDF = 'heuristic.pdf'
 HEURISTIC_PICKLE = 'data/heuristic.pkl'
-DPGMM_N_COMPONENTS = 3
+DPGMM_N_COMPONENTS = 10
 
 CLUSTER_COLUMNS = ['Average fold', 'Reference GC']
+CONTIG_COLUMN = 'IMG scaffold_oid'
 
 sns.set()
 sns.set(style="whitegrid")
@@ -95,6 +96,24 @@ def dbscan_heuristic(elviz_data, scaler):
         plt.close()
 
 
+def dump_clusters(filename, key, labels, contigs):
+    name = list(filter(None, key))[-1]
+    print(name)
+    cluster = 1
+    unique_labels = set(labels)
+    for k in unique_labels:
+        if k == -1:
+            continue
+        dat_filename = filename.replace("csv", ("%s-%d.dat") % (name, cluster))
+        contig_list = contigs[labels == k]
+        #print("%s" % dat_filename)
+        cluster += 1
+        #print(contig_list)
+        with open(RESULTS_DIR + dat_filename, 'w') as file:
+            for item in contig_list:
+                file.write("{}\n".format(item))
+
+
 def plot_clusters(pdf, df, title, labels, core_samples_mask, limits):
     # Black removed and is used for noise instead.
     unique_labels = set(labels)
@@ -129,10 +148,12 @@ def plot_clusters(pdf, df, title, labels, core_samples_mask, limits):
 def main(argv):
     dbscan_heuristic_mode = False
     dpgmm_mode = False
+    do_plot_clusters = False
+    do_dump_clusters = False
     try:
-        opts, args = getopt.getopt(argv,"he")
+        opts, args = getopt.getopt(argv,"hegdp")
     except getopt.GetoptError:
-        print('elviz_cluster.py [-h] [-e] [-g]')
+        print('elviz_cluster.py [-h] [-e] [-g] [-d] [-p]')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
@@ -140,11 +161,17 @@ def main(argv):
             print('  -h = help, -e = run dbscan' +
                   ' epsilon heuristic plot generation code')
             print('  -g = use a DPGMM for clustering')
+            print('  -p = plot the clusters to a PDF file')
+            print('  -d = dump the clusters to a text file')
             sys.exit()
         elif opt == '-e':
             dbscan_heuristic_mode = True
         elif opt == '-g':
             dpgmm_mode = True
+        elif opt == '-p':
+            do_plot_clusters = True
+        elif opt == '-d':
+            do_dump_clusters = True
 
     [elviz_data, combined_df] = read_pickle_or_CSVs(DATA_PICKLE, RAW_DATA_DIR)
 
@@ -192,13 +219,27 @@ def main(argv):
 
                 if not dpgmm_mode:
                     db = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES)
+                    db.fit(tax_rows_cluster_columns)
+
+                    core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+                    core_samples_mask[db.core_sample_indices_] = True
+                    labels = db.labels_
                 else:
-                    db = mixture.GPGMM(n_components=DPGMM_N_COMPONENTS,
-                                       covariance_type='full')
-                db.fit(tax_rows_cluster_columns)
-                core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-                core_samples_mask[db.core_sample_indices_] = True
-                labels = db.labels_
+                    db = mixture.DPGMM(n_components=DPGMM_N_COMPONENTS, n_iter=100,
+                                       covariance_type='full', alpha=100, verbose=0)
+                    db.fit(tax_rows_cluster_columns)
+                    Y_ = db.predict(tax_rows_cluster_columns)
+                    for i, (mean, covar) in enumerate(zip(
+                        db.means_, db._get_covars())):
+                        if not np.any(Y_ == i):
+                            continue
+                        #plt.scatter(X[Y_ == i, 0], X[Y_ == i, 1], .8, color=color)
+                    labels = Y_
+                    core_samples_mask = np.zeros_like(labels, dtype=bool)
+                    core_samples_mask[:] = True
+                            
+                #print(labels)
+                #print(type(labels))
 
                 # number of clusters in labels, ignoring noise if present.
                 n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
@@ -206,9 +247,14 @@ def main(argv):
                 if n_clusters_ < 1:
                     continue
 
+                #print(tax_rows_cluster_columns)
+
                 title = ', '.join(key)
-                plot_clusters(pdf, scaler.inverse_transform(tax_rows_cluster_columns),
+                if (do_plot_clusters):
+                    plot_clusters(pdf, scaler.inverse_transform(tax_rows_cluster_columns),
                               title, labels, core_samples_mask, limits)
+                if (do_dump_clusters):
+                    dump_clusters(filename, key, labels, df[CONTIG_COLUMN]);
 
 
 if __name__ == "__main__":
