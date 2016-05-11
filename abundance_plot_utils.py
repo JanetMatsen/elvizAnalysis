@@ -102,10 +102,11 @@ def subset_on_phylogeny(dataframe, phylo_level, name):
     Return only rows of the datframe where the value in column phylo_level
     matches the specified name.
 
-    :param dataframe:
-    :param phylo_level:
-    :param name:
-    :return:
+    :param dataframe: Pandas DataFrame with columns like 'Kingdom',
+    'Phylum', 'Class', ...
+    :param phylo_level: a phylogenetic label such as "Genus" or "Order"
+    :param name: phylo_level name to match
+    :return: subset of Pandas DataFrame matching the selection
     """
     print(dataframe.columns)
     return dataframe[dataframe[phylo_level] == name]
@@ -148,11 +149,23 @@ def phyla_below_level(dataframe, phylo_dict):
 
 
 def sum_on_phylogeny(dataframe, phylo_level, name):
-    # E.g. if you pass phylo_level = 'Phylum' and name = 'Bacteroidetes'
-    # You will get one row with columns ['phylogenetic label', 'name',
-    # 'sum of abundances'] *per* sample.
-    # The sum of abundances results from groupby aggregations within the
-    # sample group.
+    """
+    Sum children rows for phylo_level == name in dataframe; returns one row
+    per sample.
+
+    E.g. if you pass phylo_level = 'Phylum' and name = 'Bacteroidetes',
+    you will get one row with columns ['phylogenetic label', 'name',
+    'sum of abundances'] *per* sample.
+    The sum of abundances results from groupby aggregations within the
+    sample group.
+
+    :param dataframe: dataframe with phylogenetic levels as columns
+    :param phylo_level: A phylogenetic level in the set
+    ['Kingdom', 'Phylum', 'Class', 'Order', 'Family']
+    :param name: name for the desired value of phylo_level
+    :return: Pandas DataFrame with aggregated rows based on phylo_level == name
+    """
+
     relevant_rows = subset_on_phylogeny(dataframe=dataframe,
                                         phylo_level=phylo_level,
                                         name=name)
@@ -168,8 +181,23 @@ def sum_on_phylogeny(dataframe, phylo_level, name):
 
 
 def aggregate_mixed_phylogeny(dataframe, phylo_dict, main_dir='./'):
-    # Loop over the different phylogenetic levels specified.
-    # Make a list of each dataframe that will be concatenated.
+    """
+    Summarise abundances based on cherry-picked phylogenetic abundances,
+    perhaps mixed at different levels.
+
+    Loop over the different phylogenetic levels specified in a dictionary of
+    phylogenetic level keys and name pairs.  Reduce using sum_on_phylogeny()
+    and store that result in a list.  Concatenate the lists into one DataFrame
+    for return.
+
+    :param dataframe: dataframe containing all the data to pick through
+    :param phylo_dict: a dictionary with phylogenetic levels as keys and
+    names as values.  E.g. {'Phylum':['Bacteroidetes'],
+    'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
+    :param main_dir: directory where the data is stored.  This argument was
+    added so jupyter notebooks could be run in a sub-directory.
+    :return:
+    """
     reduced_data = []
     for key in phylo_dict.keys():
         for name in phylo_dict[key]:
@@ -204,6 +232,14 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict, main_dir='./'):
 
 
 def phylo_dict_to_descriptive_string(phylo_dict):
+    """
+    Turn a phylo_dict into a string for plot names and titles.
+
+    :param phylo_dict: a dictionary with phylogenetic levels as keys and
+    names as values.  E.g. {'Phylum':['Bacteroidetes'],
+    'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
+    :return: a string without spaces representing concatenation of the dict.
+    """
     # todo: go through highest orders of phylo first.
     # e.g. phylum looped over before order.
     desc_string = ""
@@ -226,6 +262,29 @@ def plot_across_phylogeny(dataframe, phylo_dict,
                           plot_dir='/plots/mixed_phylogeny/',
                           size_spec=False,
                           aspect_spec=False):
+    """
+    Make a plot using a phylo_dict.
+
+    The phylo_dict is used to make a summary dataframe using
+    aggregate_mixed_phylogeny(), and the reult is plotted.
+
+    :param dataframe: dataframe to source all data from
+    :param phylo_dict: a dictionary with phylogenetic levels as keys and
+    names as values.  E.g. {'Phylum':['Bacteroidetes'],
+    'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
+    :param facet: The rows to facet the subplots by.  Defaults to replicates,
+    so weeks will be the columns.
+    :param annotate: print numerical values inside each square?  (Makes big
+    plots *really* big; not recommended for default use.
+    :param main_dir: main dir to consier "home", so notebooks can be run in
+    remote directories.
+    :param plot_dir: path to save plots at, relative to main_dir
+    :param size_spec: manually specify the figure size (useful when default
+    is ugly)
+    :param aspect_spec: manually specify the figure asepct ratio (useful when
+    default is ugly
+    :return: saves and returns a seaborn heat map
+    """
 
     # todo: What happens if you submit a Genus for something you also
     # submitted an order for???   For now assume the user is smarter than that.
@@ -261,8 +320,8 @@ def plot_across_phylogeny(dataframe, phylo_dict,
 
         :param data: dataframe to plot
         :param groupby: column to group on
-        :param xrotation:
-        :param kws:
+        :param xrotation: degrees to rotate x labels by
+        :param kws: kewyord arguments for plotting
         :return:
         """
         # pivot only supports one column for now.
@@ -361,10 +420,17 @@ def plot_across_phylogeny(dataframe, phylo_dict,
 
 def label_from_phylo_colnames(*args):
     """
+    Return a string that compresses a list into a string separated by _
+
     e.g. ['Burkholderiales', 'Comamonadaceae, 'other'] -->
         'Burkholderiales_Comamonadaceae_other', or
     ['Burkholderiales', NaN, 'other']
+
+    :param args: a list
+    :return:
     """
+    # TODO: doesn't make sense to use *args for this function, since we only
+    #  ever pass one list.  (One list, Right?)
     name_string = ""
     for name in args:
         if name != 'other':
@@ -384,6 +450,19 @@ def label_from_phylo_colnames(*args):
 
 def heatmap_all_below(dataframe, phylo_dict, plot_dir,
                       main_dir='.', low_cutoff=0.001):
+    """
+    Make a heatmap of all the taxa below the taxa specified in phylo_dict.
+
+    :param dataframe: dataframe of data to harvest excerpts from
+    :param phylo_dict: a dictionary with phylogenetic levels as keys and
+    names as values.  E.g. {'Phylum':['Bacteroidetes'],
+    'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
+    :param plot_dir: path to save plots to, relative to main_dir
+    :param main_dir: path todata source, etc.
+    :param low_cutoff: lowest abundance to include.  A taxa must be above
+    this threshold in at least one sample to be included.
+    :return:
+    """
     # grab the data for that phylo:
     # for now assume jusst 1 key and 1 value.
     phylo_level = list(phylo_dict.keys())[0]
