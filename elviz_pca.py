@@ -15,7 +15,7 @@ def import_elviz_data(genus_only=True, main_dir='./'):
     :return: pandas dataframe
     """
 
-    path_to_csv = main_dir + "/results/reduced_data--all_phylogeny_remains.csv"
+    path_to_csv = main_dir + "/results/reduced_data--all_taxonomy_remains.csv"
     print('loading {}'.format(path_to_csv))
     df = pd.read_csv(path_to_csv)
 
@@ -33,7 +33,7 @@ def pivot_for_pca(dataframe, genus_only=True):
     """
     pivot to the format required for scikitlearn pca
     :param dataframe:input dataframe reduced to genus only
-    :param genus_only: option to limit to genus (True) or keep all phylogeny
+    :param genus_only: option to limit to genus (True) or keep all taxa
     :return:dataframe with columns as samples and rows as genera
     """
     if genus_only:
@@ -215,12 +215,12 @@ def plot_pca_results(top_percent=20, genus_only=False,
 
     filename = main_dir + '/plots/pca_of_top_{}_percent--'.format(top_percent)
 
-    # prepare a filename, depending on whether all phylogeny or only genus
+    # prepare a filename, depending on whether all taxonomy or only genus
     # is used.
     if genus_only:
         filename += 'genus_only'
     else:
-        filename += 'all_phylogeny'
+        filename += 'all_taxa'
     if uniform_axes:
         filename += '_unif_axes_'
     if facet_row:
