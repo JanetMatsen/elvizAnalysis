@@ -97,24 +97,24 @@ def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
     g.savefig(plot_dir + filename + '.pdf')
 
 
-def subset_on_phylogeny(dataframe, phylo_level, name):
+def subset_on_taxonomy(dataframe, taxa_level, name):
     """
-    Return only rows of the datframe where the value in column phylo_level
+    Return only rows of the datframe where the value in column taxa_level
     matches the specified name.
 
     :param dataframe: Pandas DataFrame with columns like 'Kingdom',
     'Phylum', 'Class', ...
-    :param phylo_level: a phylogenetic label such as "Genus" or "Order"
-    :param name: phylo_level name to match
+    :param taxa_level: a taxagenetic label such as "Genus" or "Order"
+    :param name: taxa_level name to match
     :return: subset of Pandas DataFrame matching the selection
     """
     print(dataframe.columns)
-    return dataframe[dataframe[phylo_level] == name]
+    return dataframe[dataframe[taxa_level] == name]
 
 
-def other_phylogeny_levels(level):
+def other_taxonomy_levels(level):
     """
-    return the name of all the phylogenetic levels *not* specified by level.
+    return the name of all the taxonomic levels *not* specified by level.
 
     Handy if you want to drop all the other columns.
 
@@ -126,72 +126,72 @@ def other_phylogeny_levels(level):
     return levels
 
 
-def phylo_levels_above(phylo_level):
+def taxonomy_levels_above(taxa_level):
     """
     E.g. 'Order' --> ['Kingdom', 'Phylum', 'Class']
     """
     p_levels = ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus']
-    position_of_phylo_level = p_levels.index(phylo_level)
-    return p_levels[0:position_of_phylo_level]
+    position_of_taxa_level = p_levels.index(taxa_level)
+    return p_levels[0:position_of_taxa_level]
 
 
-def phylo_levels_below(phylo_level):
+def taxa_levels_below(taxa_level):
     """
     E.g. 'Order' --> ['Family', 'Genus']
     """
     p_levels = ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus']
-    position_of_phylo_level = p_levels.index(phylo_level)
-    return p_levels[position_of_phylo_level + 1:]
+    position_of_taxa_level = p_levels.index(taxa_level)
+    return p_levels[position_of_taxa_level + 1:]
 
 
-def phyla_below_level(dataframe, phylo_dict):
+def phyla_below_level(dataframe, taxa_dict):
     pass
 
 
-def sum_on_phylogeny(dataframe, phylo_level, name):
+def sum_on_taxonomy(dataframe, taxa_level, name):
     """
-    Sum children rows for phylo_level == name in dataframe; returns one row
+    Sum children rows for taxa_level == name in dataframe; returns one row
     per sample.
 
-    E.g. if you pass phylo_level = 'Phylum' and name = 'Bacteroidetes',
-    you will get one row with columns ['phylogenetic label', 'name',
+    E.g. if you pass taxa_level = 'Phylum' and name = 'Bacteroidetes',
+    you will get one row with columns ['taxagenetic label', 'name',
     'sum of abundances'] *per* sample.
     The sum of abundances results from groupby aggregations within the
     sample group.
 
-    :param dataframe: dataframe with phylogenetic levels as columns
-    :param phylo_level: A phylogenetic level in the set
+    :param dataframe: dataframe with taxagenetic levels as columns
+    :param taxa_level: A taxagenetic level in the set
     ['Kingdom', 'Phylum', 'Class', 'Order', 'Family']
-    :param name: name for the desired value of phylo_level
-    :return: Pandas DataFrame with aggregated rows based on phylo_level == name
+    :param name: name for the desired value of taxa_level
+    :return: Pandas DataFrame with aggregated rows based on taxa_level == name
     """
 
-    relevant_rows = subset_on_phylogeny(dataframe=dataframe,
-                                        phylo_level=phylo_level,
-                                        name=name)
-    # Collaps all phylogeny below:
-    for col_name in other_phylogeny_levels(phylo_level):
+    relevant_rows = subset_on_taxonomy(dataframe=dataframe,
+                                       taxa_level=taxa_level,
+                                       name=name)
+    # Collaps all taxonomy below:
+    for col_name in other_taxonomy_levels(taxa_level):
         del relevant_rows[col_name]
 
     # sum all
     aggregated_rows = relevant_rows.groupby(
-        [phylo_level, 'ID'])['fraction of reads'].sum()
+        [taxa_level, 'ID'])['fraction of reads'].sum()
 
     return aggregated_rows
 
 
-def aggregate_mixed_phylogeny(dataframe, phylo_dict, main_dir='./'):
+def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./'):
     """
-    Summarise abundances based on cherry-picked phylogenetic abundances,
+    Summarise abundances based on cherry-picked taxonomic abundances,
     perhaps mixed at different levels.
 
-    Loop over the different phylogenetic levels specified in a dictionary of
-    phylogenetic level keys and name pairs.  Reduce using sum_on_phylogeny()
+    Loop over the different taxonomic levels specified in a dictionary of
+    taxonomic level keys and name pairs.  Reduce using sum_on_taxonomy()
     and store that result in a list.  Concatenate the lists into one DataFrame
     for return.
 
     :param dataframe: dataframe containing all the data to pick through
-    :param phylo_dict: a dictionary with phylogenetic levels as keys and
+    :param taxa_dict: a dictionary with taxonomic levels as keys and
     names as values.  E.g. {'Phylum':['Bacteroidetes'],
     'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
     :param main_dir: directory where the data is stored.  This argument was
@@ -199,10 +199,10 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict, main_dir='./'):
     :return:
     """
     reduced_data = []
-    for key in phylo_dict.keys():
-        for name in phylo_dict[key]:
-            reduced_rows = sum_on_phylogeny(dataframe=dataframe,
-                                            phylo_level=key,
+    for key in taxa_dict.keys():
+        for name in taxa_dict[key]:
+            reduced_rows = sum_on_taxonomy(dataframe=dataframe,
+                                            taxa_level=key,
                                             name=name)
 
             # check that you got some rows.  Might be a typo if not!
@@ -210,7 +210,7 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict, main_dir='./'):
                 'found no rows for {} = "{}"'.format(key, name)
 
             # the index needs to be dropped but it is stored below as
-            # 'phylogenetic level' and 'phylogenetic name'
+            # 'taxonomic level' and 'taxonomic name'
             # I haven't been able to reset_index on this series to drop the
             # index so I'm doing it this way:
             reduced_rows = reduced_rows.reset_index()
@@ -218,8 +218,8 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict, main_dir='./'):
             # make a new dataframe out of it.
             reduced_data.append(
                 pd.DataFrame(
-                    {'phylogenetic level': key,
-                     'phylogenetic name': name,
+                    {'taxonomic level': key,
+                     'taxonomic name': name,
                      'abundance sum': reduced_rows['fraction of reads'],
                      'ID': reduced_rows['ID']}))
     # Concatenate data
@@ -231,23 +231,23 @@ def aggregate_mixed_phylogeny(dataframe, phylo_dict, main_dir='./'):
     return dataframe
 
 
-def phylo_dict_to_descriptive_string(phylo_dict):
+def taxa_dict_to_descriptive_string(taxa_dict):
     """
-    Turn a phylo_dict into a string for plot names and titles.
+    Turn a taxa_dict into a string for plot names and titles.
 
-    :param phylo_dict: a dictionary with phylogenetic levels as keys and
+    :param taxa_dict: a dictionary with taxonomic levels as keys and
     names as values.  E.g. {'Phylum':['Bacteroidetes'],
     'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
     :return: a string without spaces representing concatenation of the dict.
     """
-    # todo: go through highest orders of phylo first.
+    # todo: go through highest orders of taxa first.
     # e.g. phylum looped over before order.
     desc_string = ""
-    for key in phylo_dict:
+    for key in taxa_dict:
         print(key)
         desc_string += key
         desc_string += '-'
-        for value in phylo_dict[key]:
+        for value in taxa_dict[key]:
             desc_string += value + '_'
         desc_string = desc_string[:-1]
         desc_string += '--'
@@ -256,20 +256,20 @@ def phylo_dict_to_descriptive_string(phylo_dict):
     return desc_string
 
 
-def plot_across_phylogeny(dataframe, phylo_dict,
+def plot_across_taxonomy(dataframe, taxa_dict,
                           facet='rep', annotate=True,
                           main_dir='./',
-                          plot_dir='/plots/mixed_phylogeny/',
+                          plot_dir='/plots/mixed_taxonomy/',
                           size_spec=False,
                           aspect_spec=False):
     """
-    Make a plot using a phylo_dict.
+    Make a plot using a taxa_dict.
 
-    The phylo_dict is used to make a summary dataframe using
-    aggregate_mixed_phylogeny(), and the reult is plotted.
+    The taxa_dict is used to make a summary dataframe using
+    aggregate_mixed_taxonomy(), and the reult is plotted.
 
     :param dataframe: dataframe to source all data from
-    :param phylo_dict: a dictionary with phylogenetic levels as keys and
+    :param taxa_dict: a dictionary with taxonomic levels as keys and
     names as values.  E.g. {'Phylum':['Bacteroidetes'],
     'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
     :param facet: The rows to facet the subplots by.  Defaults to replicates,
@@ -288,8 +288,8 @@ def plot_across_phylogeny(dataframe, phylo_dict,
 
     # todo: What happens if you submit a Genus for something you also
     # submitted an order for???   For now assume the user is smarter than that.
-    plot_data = aggregate_mixed_phylogeny(dataframe=dataframe,
-                                          phylo_dict=phylo_dict,
+    plot_data = aggregate_mixed_taxonomy(dataframe=dataframe,
+                                          taxa_dict=taxa_dict,
                                           main_dir=main_dir)
 
     # store the maximum abundance level.  We will need to tell all the
@@ -310,7 +310,7 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     print(plot_data.head())
 
     def pivot_so_columns_are_plotting_variable(dataframe, groupby):
-        return dataframe.pivot(index='phylogenetic name',
+        return dataframe.pivot(index='taxonomic name',
                                columns=groupby,
                                values='abundance sum')
 
@@ -339,7 +339,7 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     # Control plot aesthetics depending on facet option.
     if facet == 'week':
         xrotation = 0
-        num_rows = len(plot_data['phylogenetic name'].unique())
+        num_rows = len(plot_data['taxonomic name'].unique())
         size = 2 * 0.2*num_rows
         aspect = 1
         space_for_cbar = 0.85
@@ -349,7 +349,7 @@ def plot_across_phylogeny(dataframe, phylo_dict,
         xrotation = 90
         # Calculate the size, aspect depending on the number of
         #  rows per subplot
-        num_rows = len(plot_data['phylogenetic name'].unique())
+        num_rows = len(plot_data['taxonomic name'].unique())
         size = 0.9 + 0.2*num_rows
         aspect = 1.2
         space_for_cbar = 0.85
@@ -399,7 +399,7 @@ def plot_across_phylogeny(dataframe, phylo_dict,
 
     # add a supertitle, you bet.
     plt.subplots_adjust(top=0.80)
-    supertitle = phylo_dict_to_descriptive_string(phylo_dict)
+    supertitle = taxa_dict_to_descriptive_string(taxa_dict)
     g.fig.suptitle(supertitle, size=16)
 
     # Also summarise # of taxa rows being grouped together.
@@ -418,7 +418,7 @@ def plot_across_phylogeny(dataframe, phylo_dict,
     return g
 
 
-def label_from_phylo_colnames(*args):
+def label_from_taxa_colnames(*args):
     """
     Return a string that compresses a list into a string separated by _
 
@@ -448,13 +448,13 @@ def label_from_phylo_colnames(*args):
         return 'other'
 
 
-def heatmap_all_below(dataframe, phylo_dict, plot_dir,
+def heatmap_all_below(dataframe, taxa_dict, plot_dir,
                       main_dir='.', low_cutoff=0.001):
     """
-    Make a heatmap of all the taxa below the taxa specified in phylo_dict.
+    Make a heatmap of all the taxa below the taxa specified in taxa_dict.
 
     :param dataframe: dataframe of data to harvest excerpts from
-    :param phylo_dict: a dictionary with phylogenetic levels as keys and
+    :param taxa_dict: a dictionary with taxonomic levels as keys and
     names as values.  E.g. {'Phylum':['Bacteroidetes'],
     'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
     :param plot_dir: path to save plots to, relative to main_dir
@@ -463,21 +463,21 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir,
     this threshold in at least one sample to be included.
     :return:
     """
-    # grab the data for that phylo:
+    # grab the data for that taxa:
     # for now assume jusst 1 key and 1 value.
-    phylo_level = list(phylo_dict.keys())[0]
-    phylo_name = list(phylo_dict.values())[0][0]
-    dataframe = dataframe[dataframe[phylo_level] == phylo_name]
+    taxa_level = list(taxa_dict.keys())[0]
+    taxa_name = list(taxa_dict.values())[0][0]
+    dataframe = dataframe[dataframe[taxa_level] == taxa_name]
     print(dataframe.head())
 
     # Columns to form a concatenated label from:
-    label_cols = phylo_levels_below(phylo_level=phylo_level)
+    label_cols = taxa_levels_below(taxa_level=taxa_level)
     print('label_cols: {}'.format(label_cols))
 
     # change nan cells to 'unknown'
     dataframe.fillna('unknown', inplace=True)
 
-    # make a summary string representing the phylogeny for everything below
+    # make a summary string representing the taxonomy for everything below
 
     def label_building_lambda(f, columns):
         """
@@ -488,9 +488,9 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir,
         """
         return lambda row: f(*(row[col] for col in columns))
 
-    # TODO: use the phylo_dict to get the columns to use!
+    # TODO: use the taxa_dict to get the columns to use!
     dataframe['name_string'] = dataframe.apply(
-        label_building_lambda(f=label_from_phylo_colnames,
+        label_building_lambda(f=label_from_taxa_colnames,
                               columns=label_cols), axis=1)
 
     # reduce to only name_string rows with at least one abundance > the
@@ -502,7 +502,7 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir,
                                                              'reads',
                                             high=1,
                                             low=low_cutoff,
-                                            phylo_column='name_string')
+                                            taxa_column='name_string')
 
     # Plot as usual, using the stuff developed above.
     # todo: factor some of this??
@@ -562,7 +562,7 @@ def heatmap_all_below(dataframe, phylo_dict, plot_dir,
 
     # add a supertitle, you bet.
     plt.subplots_adjust(top=0.95)
-    supertitle_base = phylo_dict_to_descriptive_string(phylo_dict)
+    supertitle_base = taxa_dict_to_descriptive_string(taxa_dict)
     supertitle = \
         supertitle_base + '.  Min fraction of reads cutoff = {}'.format(
             low_cutoff)
