@@ -135,7 +135,7 @@ def taxonomy_levels_above(taxa_level):
     return p_levels[0:position_of_taxa_level]
 
 
-def taxa_levels_below(taxa_level):
+def taxonomy_levels_below(taxa_level):
     """
     E.g. 'Order' --> ['Family', 'Genus']
     """
@@ -471,7 +471,7 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir,
     print(dataframe.head())
 
     # Columns to form a concatenated label from:
-    label_cols = taxa_levels_below(taxa_level=taxa_level)
+    label_cols = taxonomy_levels_below(taxa_level=taxa_level)
     print('label_cols: {}'.format(label_cols))
 
     # change nan cells to 'unknown'
@@ -502,7 +502,7 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir,
                                                              'reads',
                                             high=1,
                                             low=low_cutoff,
-                                            taxa_column='name_string')
+                                            taxonomy_column='name_string')
 
     # Plot as usual, using the stuff developed above.
     # todo: factor some of this??
