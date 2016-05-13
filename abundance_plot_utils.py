@@ -144,10 +144,6 @@ def taxonomy_levels_below(taxa_level):
     return p_levels[position_of_taxa_level + 1:]
 
 
-def phyla_below_level(dataframe, taxa_dict):
-    pass
-
-
 def sum_on_taxonomy(dataframe, taxa_level, name):
     """
     Sum children rows for taxa_level == name in dataframe; returns one row
