@@ -95,7 +95,7 @@ def make_figures():
                     "results/reduced_data--all_taxonomy_remains.csv")
     t_dicts = [MAJOR_PLAYERS, METHYLOCOCCACEAE, METHYLOPHILACEAE, PREDATORS]
     for t_dict in t_dicts:
-        abundance_plot_utils.plot_across_taxonomy(
+        abundance_plot_utils.heatmap_from_taxa_dict(
             dataframe = data_reduced,
             taxa_dict = t_dict,
             facet = 'rep',

@@ -252,12 +252,12 @@ def taxa_dict_to_descriptive_string(taxa_dict):
     return desc_string
 
 
-def plot_across_taxonomy(dataframe, taxa_dict,
-                          facet='rep', annotate=True,
-                          main_dir='./',
-                          plot_dir='./plots/mixed_taxonomy/',
-                          size_spec=False,
-                          aspect_spec=False):
+def heatmap_from_taxa_dict(dataframe, taxa_dict,
+                           facet='rep', annotate=True,
+                           main_dir='./',
+                           plot_dir='./plots/mixed_taxonomy/',
+                           size_spec=False,
+                           aspect_spec=False):
     """
     Make a plot using a taxa_dict.
 
