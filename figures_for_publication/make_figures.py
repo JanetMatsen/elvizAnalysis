@@ -93,8 +93,7 @@ def make_figures():
     data_reduced = \
         pd.read_csv(MAIN_DIR +
                     "results/reduced_data--all_taxonomy_remains.csv")
-    t_dicts = [MAJOR_PLAYERS, METHYLOCOCCACEAE, METHYLOPHILACEAE,
-                  BURKOLDERIALES, PREDATORS]
+    t_dicts = [MAJOR_PLAYERS, METHYLOCOCCACEAE, METHYLOPHILACEAE, PREDATORS]
     for t_dict in t_dicts:
         abundance_plot_utils.plot_across_taxonomy(
             dataframe = data_reduced,
@@ -102,8 +101,17 @@ def make_figures():
             facet = 'rep',
             annotate = False,
             main_dir=MAIN_DIR,
-            plot_dir='./plots/mixed_taxonomy/',
+            plot_dir='./plots/',
             size_spec=False, aspect_spec=False)
+
+    # want a different kind of plot for Burkolderiales:
+    abundance_plot_utils.heatmap_all_below(
+        dataframe = data_reduced,
+        taxa_dict = BURKOLDERIALES,
+        plot_dir = './plots/',
+        main_dir = MAIN_DIR,
+        low_cutoff = 0.004
+    )
 
 if __name__ == "__main__":
     make_figures()
