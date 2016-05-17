@@ -59,6 +59,19 @@ def make_directory(dirpath):
         os.makedirs(dirpath)
 
 
+def concat_dir_and_filename(dir, filename, make_relative=True):
+    if (dir[-1] != '/') and (filename[0] != '/'):
+        dirpath += '/'
+    filepath = dir + filename
+    # add a "./" if not there
+    if make_relative:
+        if filepath[0] == "/":
+            filepath = "." + filepath
+        elif filepath[0] != "./":
+            filepath = "./" + filepath
+    return filepath
+
+
 def prepare_plot_dir(dirpath):
     """
     Add a trailing / to the plot dir if missing and creat dir if needed.

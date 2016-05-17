@@ -6,6 +6,7 @@ import seaborn as sns
 from sklearn.decomposition import PCA
 
 from elviz_utils import read_sample_info
+from elviz_utils import concat_dir_and_filename
 
 
 def import_elviz_data(genus_only=True, main_dir='./'):
@@ -101,7 +102,8 @@ def sort_by_variance(main_dir='./', genus_only=True):
     return df
 
 
-def plot_variance(main_dir='./', log=True, genus_only=True):
+def plot_variance(main_dir='./', plot_dir='./plots/',
+                  log=True, genus_only=True):
     df = sort_by_variance(main_dir=main_dir, genus_only=genus_only)
     fig, ax = plt.subplots()
     df.reset_index().variance.plot(ax=ax, kind='hist', bins=100)
@@ -110,7 +112,10 @@ def plot_variance(main_dir='./', log=True, genus_only=True):
     plt.title('distribution of variances (log scale)')
     plt.xlabel("variance for genera's abundance across all samples")
     plt.ylabel("frequency (log scale)")
-    plt.savefig(main_dir + '/plots/distribution_of_sample-wise_variances.pdf')
+    filepath = \
+        concat_dir_and_filename(plot_dir,
+                                'distribution_of_sample-wise_variances.pdf')
+    plt.savefig(filepath)
 
 
 def run_pca(main_dir='./', top_percent=20, genus_only=True):
@@ -142,7 +147,8 @@ def run_pca(main_dir='./', top_percent=20, genus_only=True):
 
 
 def plot_pca_results(top_percent=20, genus_only=False,
-                     facet_row=True, uniform_axes=True, main_dir='./',
+                     facet_row=True, uniform_axes=True,
+                     main_dir='./', plot_dir='./plots/',
                      savefig=True):
     # get data that's ready for PCA:
     pca_input, data_transformed, variances = \
@@ -213,7 +219,8 @@ def plot_pca_results(top_percent=20, genus_only=False,
     print(plot_args)
     g = base_plot(**plot_args)
 
-    filename = main_dir + '/plots/pca_of_top_{}_percent--'.format(top_percent)
+    filename = concat_dir_and_filename(
+        plot_dir, 'pca_of_top_{}_percent--'.format(top_percent))
 
     # prepare a filename, depending on whether all taxonomy or only genus
     # is used.
