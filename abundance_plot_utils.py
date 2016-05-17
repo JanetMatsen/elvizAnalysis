@@ -255,7 +255,7 @@ def taxa_dict_to_descriptive_string(taxa_dict):
 def plot_across_taxonomy(dataframe, taxa_dict,
                           facet='rep', annotate=True,
                           main_dir='./',
-                          plot_dir='/plots/mixed_taxonomy/',
+                          plot_dir='./plots/mixed_taxonomy/',
                           size_spec=False,
                           aspect_spec=False):
     """
@@ -401,7 +401,7 @@ def plot_across_taxonomy(dataframe, taxa_dict,
     # Also summarise # of taxa rows being grouped together.
 
     # prepare filename and save.
-    plot_dir = elviz_utils.prepare_plot_dir(main_dir + plot_dir)
+    plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
     print("plot directory: {}".format(plot_dir))
     filepath = plot_dir + supertitle
     filepath += "--{}".format(facet)
@@ -567,7 +567,7 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir,
     # Also summarise # of taxa rows being grouped together.
 
     # prepare filename and save.
-    plot_dir = elviz_utils.prepare_plot_dir(main_dir + plot_dir)
+    plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
     filepath = plot_dir + supertitle_base
     filepath += "--min_{}".format(low_cutoff)
     filepath += "--{}".format('x-week')
