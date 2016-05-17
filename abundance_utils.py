@@ -7,7 +7,7 @@ from elviz_utils import IMPORT_DATA_TYPES
 def read_elviz_csv(filename, filepath):
     """
     Read in a csv from elviz, extract the ID and project number,
-    then reduce to one row per phylogeny.
+    then reduce to one row per taxonomy.
     Not using Dave's elviz_utils one b/c I get "usecols" arg in
     Python 2.7
 
@@ -83,7 +83,7 @@ def normalize_groupby(group, column):
 def read_and_reduce_elviz_csv(filename, filepath, sample_info):
     """
     Read in a csv from elviz, extract the ID and project number, 
-    then reduce to one row per phylogeny.
+    then reduce to one row per taxonomy.
 
     :param filename: filename to raw Elviz .csv
     :param filepath: filepath where file lives
@@ -235,24 +235,24 @@ def reduce_to_genus_only(dataframe):
 
 
 def filter_by_abundance(data, abundance_column, high, low,
-                        phylo_column='Genus'):
+                        taxonomy_column='Genus'):
     """
-    Return only rows where the specified phylo_colum's set of rows have at
+    Return only rows where the specified taxonomy_column's set of rows have at
     least one value of abundance_column in range(low, high)
 
     :param data: dataframe to filter
     :param abundance_column: column to filter by.  Genus?
-    :param phylo_column: column to grab unique values from.  Defaults to
+    :param taxonomy_column: column to grab unique values from.  Defaults to
     'Genus' for historical reasons.
     :param high: highest abundance to look for
     :param low: lowest abundance to look for
     :return: dataframe
     """
-    # get a list of the phylo_column names that meet our criteria.
-    phylo_colum_values_to_keep = \
+    # get a list of the taxonomy_column names that meet our criteria.
+    tax_column_values_to_keep = \
         data[(data[abundance_column] <= high) &
-             (data[abundance_column] >= low)][phylo_column].unique()
-    print(phylo_colum_values_to_keep[0:5])
-    # Return ALL rows for a phylo_column label if any of the rows had an
+             (data[abundance_column] >= low)][taxonomy_column].unique()
+    print(tax_column_values_to_keep[0:5])
+    # Return ALL rows for a taxonomy_column label if any of the rows had an
     # abundance value in the desired range.
-    return data[data[phylo_column].isin(phylo_colum_values_to_keep)]
+    return data[data[taxonomy_column].isin(tax_column_values_to_keep)]
