@@ -1,12 +1,19 @@
-%run GLOBALS.pyi
 
-import matplotlib
+
+# %run GLOBALS.py
+MAIN_DIR = "../"
+
+import sys
+sys.path.append('../')
 
 #import numpy as np
 import os
 import pandas as pd
 import re
 import seaborn as sns
+
+import abundance_plot_utils
+import elviz_utils
 
 # Component 1:
 # Methylococcales, Methylophilales and Burkholderiales at the order level
@@ -80,14 +87,23 @@ PREDATORS={'Order':['Bdellovibrionales', 'Myxococcales']}
 
 
 def make_figures():
+    # Make the ./plots/ dir if needed
+    elviz_utils.prepare_plot_dir(MAIN_DIR)
+
     data_reduced = \
         pd.read_csv(MAIN_DIR +
-                    "/results/reduced_data--all_taxonomy_remains.csv")
-    taxa_dicts = [MAJOR_PLAYERS, METHYLOCOCCACEAE, METHYLOPHILACEAE,
+                    "results/reduced_data--all_taxonomy_remains.csv")
+    t_dicts = [MAJOR_PLAYERS, METHYLOCOCCACEAE, METHYLOPHILACEAE,
                   BURKOLDERIALES, PREDATORS]
-    for taxa_dict in taxa_dicts:
-
-    pass
+    for t_dict in t_dicts:
+        abundance_plot_utils.plot_across_taxonomy(
+            dataframe = data_reduced,
+            taxa_dict = t_dict,
+            facet = 'rep',
+            annotate = False,
+            main_dir=MAIN_DIR,
+            plot_dir='./plots/mixed_taxonomy/',
+            size_spec=False, aspect_spec=False)
 
 if __name__ == "__main__":
     make_figures()
