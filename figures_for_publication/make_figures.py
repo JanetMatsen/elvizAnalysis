@@ -110,7 +110,7 @@ def make_figures():
         taxa_dict = BURKOLDERIALES,
         plot_dir = './plots/',
         main_dir = MAIN_DIR,
-        low_cutoff = 0.004
+        low_cutoff = 0.02
     )
 
 if __name__ == "__main__":
