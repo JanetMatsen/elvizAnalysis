@@ -98,7 +98,6 @@ def dbscan_heuristic(elviz_data, scaler):
 
 def dump_clusters(filename, key, labels, contigs):
     name = list(filter(None, key))[-1]
-    print(name)
     cluster = 1
     unique_labels = set(labels)
     for k in unique_labels:
@@ -106,12 +105,11 @@ def dump_clusters(filename, key, labels, contigs):
             continue
         dat_filename = filename.replace("csv", ("%s-%d.dat") % (name, cluster))
         contig_list = contigs[labels == k]
-        #print("%s" % dat_filename)
         cluster += 1
-        #print(contig_list)
         with open(RESULTS_DIR + dat_filename, 'w') as file:
             for item in contig_list:
                 file.write("{}\n".format(item))
+    print("%s - %d valid clusters" % (name, cluster))
 
 
 def plot_clusters(pdf, df, title, labels, core_samples_mask, limits):
@@ -254,7 +252,7 @@ def main(argv):
                     plot_clusters(pdf, scaler.inverse_transform(tax_rows_cluster_columns),
                               title, labels, core_samples_mask, limits)
                 if (do_dump_clusters):
-                    dump_clusters(filename, key, labels, df[CONTIG_COLUMN]);
+                    dump_clusters(filename, key, labels, tax_rows[CONTIG_COLUMN]);
 
 
 if __name__ == "__main__":
