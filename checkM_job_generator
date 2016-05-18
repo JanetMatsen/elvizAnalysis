@@ -1,0 +1,8 @@
+#!/bin/bash
+
+files=`find ./results -name 'elviz*fna'`
+
+for file in $files
+do
+		echo "checkm lineage_wf -t 8 --pplacer_threads 8 -x fna results checkm_output"
+done
