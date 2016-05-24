@@ -1,0 +1,27 @@
+Kingdom	Phylum	Class	Order	Family	Genus	Species	Length	fraction of reads	oxy	rep	week
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Orcinus	Orcinus orca	10	0.1	low	1	4
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Orcinus	Orcinus orca	10	0.15	low	1	5
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Orcinus	Orcinus orca	10	0.2	low	2	4
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Orcinus	Orcinus orca	10	0.25	low	2	5
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Orcinus	Orcinus orca	10	0	high	1	4
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Orcinus	Orcinus orca	10	0	high	1	5
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Orcinus	Orcinus orca	10	0.1	high	2	4
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Orcinus	Orcinus orca	10	0.5	high	2	5
+											
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Tursiops	truncatus (dolphin)	5	0.15	low	1	4
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Tursiops	truncatus (dolphin)	5	0.1	low	1	5
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Tursiops	truncatus (dolphin)	5	0.25	low	2	4
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Tursiops	truncatus (dolphin)	5	0.3	low	2	5
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Tursiops	truncatus (dolphin)	5	0.1	high	1	4
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Tursiops	truncatus (dolphin)	5	0.2	high	1	5
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Tursiops	truncatus (dolphin)	5	0	high	2	4
+Animalia	Chordata	Mamalia	Cetacea	Delphinidae	Tursiops	truncatus (dolphin)	5	0	high	2	5
+											
+Animalia	Arthropoda	Malacostraca	Decapoda	Brachyura	Cancridae	M. Magister (crab)	1	0.75	low	1	4
+Animalia	Arthropoda	Malacostraca	Decapoda	Brachyura	Cancridae	M. Magister (crab)	1	0.75	low	1	5
+Animalia	Arthropoda	Malacostraca	Decapoda	Brachyura	Cancridae	M. Magister (crab)	1	0.55	low	2	4
+Animalia	Arthropoda	Malacostraca	Decapoda	Brachyura	Cancridae	M. Magister (crab)	1	0.45	low	2	5
+Animalia	Arthropoda	Malacostraca	Decapoda	Brachyura	Cancridae	M. Magister (crab)	1	0.9	high	1	4
+Animalia	Arthropoda	Malacostraca	Decapoda	Brachyura	Cancridae	M. Magister (crab)	1	0.8	high	1	5
+Animalia	Arthropoda	Malacostraca	Decapoda	Brachyura	Cancridae	M. Magister (crab)	1	0.9	high	2	4
+Animalia	Arthropoda	Malacostraca	Decapoda	Brachyura	Cancridae	M. Magister (crab)	1	0.5	high	2	5
