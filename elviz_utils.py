@@ -45,6 +45,7 @@ def read_sample_info(main_dir='./'):
 
 
 def read_elviz_CSV(filename):
+    # TODO: redundant function in abundance_utils.  Is this one used anywhere?
     df = pd.read_csv(filename, sep=",", dtype=IMPORT_DATA_TYPES)
     # replace nans with ""
     df.fillna("", inplace=True)
