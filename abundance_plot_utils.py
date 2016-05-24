@@ -525,6 +525,7 @@ def label_from_taxa_colnames(*args):
     """
     # TODO: doesn't make sense to use *args for this function, since we only
     #  ever pass one list.  (One list, Right?)
+    # 160524 update: does seem to need to be a *args thing.
     name_string = ""
     for name in args:
         if name != 'other':
@@ -578,12 +579,26 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
         :param columns: column names to pass to function f in the lambda
         :return: function
         """
+        # * means unpack the list you get from the list comprehension
+        print("columns passed: {}".format(columns))
+        print("Use those in {}".format(f))
+        # Passing a list into label_from_taxa_colnames().
+        # Doing a list comprehension on columns.
+        # Note that (row[col] for col in columns)) is a generator .
+        # building something like label_from_taxa_colnames()
         return lambda row: f(*(row[col] for col in columns))
+        # e.g. makes:
+        # my_function([Comamonadaceae, Curvibacter]) from a row of a dataframe
+        # and the specification that columns = ['Family', 'Genus']
 
     # TODO: use the taxa_dict to get the columns to use!
+    # make a name_string per row.  It's something like
+    # "Comamonadaceae, Curvibacter" or "other"
     dataframe['name_string'] = dataframe.apply(
         label_building_lambda(f=label_from_taxa_colnames,
                               columns=label_cols), axis=1)
+    print("dataframe.head() for name_string:")
+    print(dataframe.head())
 
     # reduce to only name_string rows with at least one abundance > the
     # threshold set by low_cutoff to we don't have a zillion rows:
@@ -617,7 +632,7 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
         # http://stackoverflow.com/questions/32805267/pandas-pivot-on-multiple-columns-gives-the-truth-value-of-a-dataframe-is-ambigu
         facet_data = pivot_so_columns_are_plotting_variable(
             dataframe=data, groupby=groupby)
-        # Pass kwargs to heatmap  cmap used to be 'Blue'
+        # Pass kwargs to heatmap cmap.
         sns.heatmap(facet_data, cmap="YlGnBu", **kws)
         g.set_xticklabels(rotation=xrotation)
 
