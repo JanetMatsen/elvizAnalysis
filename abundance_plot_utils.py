@@ -542,23 +542,21 @@ def label_from_taxa_colnames(*args):
         return 'other'
 
 
-def heatmap_all_below(dataframe, taxa_dict, plot_dir,
-                      main_dir='.', low_cutoff=0.001):
+def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
     """
     Make a heatmap of all the taxa below the taxa specified in taxa_dict.
 
     :param dataframe: dataframe of data to harvest excerpts from
     :param taxa_dict: a dictionary with taxonomic levels as keys and
-    names as values.  E.g. {'Phylum':['Bacteroidetes'],
-    'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
+    names as values.  E.g. {'Order':['Burkholderiales']}
     :param plot_dir: path to save plots to, relative to main_dir
-    :param main_dir: path todata source, etc.
+    :param main_dir: path to data source, etc.
     :param low_cutoff: lowest abundance to include.  A taxa must be above
     this threshold in at least one sample to be included.
     :return:
     """
     # grab the data for that taxa:
-    # for now assume jusst 1 key and 1 value.
+    # for now assume just 1 key and 1 value.
     taxa_level = list(taxa_dict.keys())[0]
     taxa_name = list(taxa_dict.values())[0][0]
     dataframe = dataframe[dataframe[taxa_level] == taxa_name]
