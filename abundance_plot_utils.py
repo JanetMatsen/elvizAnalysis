@@ -512,7 +512,7 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     return g
 
 
-def label_from_taxa_colnames(name_list):
+def label_from_taxa_colnames(name_list, taxa_name):
     """
     Return a string that compresses a list of strings into a string
     separated by ", ".  It skips over names "other" and "unknown".
@@ -525,7 +525,12 @@ def label_from_taxa_colnames(name_list):
     ['Burkholderiales', NaN, 'other']
 
     :param args: a list
-    :return:
+    :taxa name: level to use for "other" so you get a heatmap label like
+     "other Burkolderiales" instead of "other", which could look like
+     "all other taxa summed"
+
+    :return: a string like or "Burkholderiales, Comamonadaceae",
+     or "other Burkolderiales"
     """
     # TODO: doesn't make sense to use *args for this function, since we only
     #  ever pass one list.  (One list, Right?)
@@ -545,7 +550,7 @@ def label_from_taxa_colnames(name_list):
     else:
         # If the string has no length, return 'other'
         # print('all fields empty.  returning "?"')
-        return 'other'
+        return 'other {}'.format(taxa_name)
 
 
 def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
@@ -577,7 +582,7 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
 
     # make a summary string representing the taxonomy for everything below
 
-    def label_building_lambda(f, columns):
+    def label_building_lambda(f, column_value_list, taxa_name):
         """
         Returns a lambda function to make row labels from.
         :param f: function to make a lambda out of.
@@ -585,13 +590,14 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
         :return: function
         """
         # * means unpack the list you get from the list comprehension
-        print("columns passed: {}".format(columns))
+        print("columns passed: {}".format(column_value_list))
         print("Use those in {}".format(f))
         # Passing a list into label_from_taxa_colnames().
         # Doing a list comprehension on columns.
         # Note that (row[col] for col in columns)) is a generator .
         # building something like label_from_taxa_colnames()
-        return lambda row: f([row[col] for col in columns])
+        return lambda row: f([row[col] for col in column_value_list],
+                             taxa_name)
         # e.g. makes:
         # my_function([Comamonadaceae, Curvibacter]) from a row of a dataframe
         # and the specification that columns = ['Family', 'Genus']
@@ -601,7 +607,9 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
     # "Comamonadaceae, Curvibacter" or "other"
     dataframe['name_string'] = dataframe.apply(
         label_building_lambda(f=label_from_taxa_colnames,
-                              columns=label_cols), axis=1)
+                              column_value_list=label_cols,
+                              taxa_name=taxa_name),
+        axis=1)
     print("dataframe.head() for name_string:")
     print(dataframe.head())
 
