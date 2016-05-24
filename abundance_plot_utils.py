@@ -512,9 +512,13 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     return g
 
 
-def label_from_taxa_colnames(*args):
+def label_from_taxa_colnames(name_list):
     """
-    Return a string that compresses a list into a string separated by _
+    Return a string that compresses a list of strings into a string
+    separated by ", ".  It skips over names "other" and "unknown".
+
+    Leaves out detail once "other" and "unknown" are hit.
+    So ["Oxalobacteraceae", "other"] --> "Oxalobacteraceae
 
     e.g. ['Burkholderiales', 'Comamonadaceae, 'other'] -->
         'Burkholderiales_Comamonadaceae_other', or
@@ -527,7 +531,7 @@ def label_from_taxa_colnames(*args):
     #  ever pass one list.  (One list, Right?)
     # 160524 update: does seem to need to be a *args thing.
     name_string = ""
-    for name in args:
+    for name in name_list:
         if name != 'other':
             if name != 'unknown':
                 # if not math.isnan(name):   #np.isnan(name):
@@ -539,6 +543,7 @@ def label_from_taxa_colnames(*args):
         # print('length of {} is > 0'.format(name_string))
         return name_string[:-2]
     else:
+        # If the string has no length, return 'other'
         # print('all fields empty.  returning "?"')
         return 'other'
 
@@ -586,7 +591,7 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
         # Doing a list comprehension on columns.
         # Note that (row[col] for col in columns)) is a generator .
         # building something like label_from_taxa_colnames()
-        return lambda row: f(*(row[col] for col in columns))
+        return lambda row: f([row[col] for col in columns])
         # e.g. makes:
         # my_function([Comamonadaceae, Curvibacter]) from a row of a dataframe
         # and the specification that columns = ['Family', 'Genus']
