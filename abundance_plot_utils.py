@@ -176,7 +176,64 @@ def sum_on_taxonomy(dataframe, taxa_level, name):
     return aggregated_rows
 
 
-def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./'):
+def delete_rows_for_taxa(dataframe, taxa_level, taxa_name):
+    """
+    return a copy of the dataframe with the taxa name at the specified taxa
+    level removed.
+
+    For use in aggregating_mixed_taxonomy: allows for keeping track of the
+    leftovers.
+
+    :param dataframe: dataframe to copy and delete rows from
+    :param taxa_level: taxa level to look for the name in
+    :param taxa_name: rows with this name at the specified taxa_leven are
+    deleted
+    :return: a dataframe with less rows
+    """
+    df = dataframe.copy()
+    return df[df[taxa_level] != taxa_name]
+
+
+def collapse_unused_taxa_into_other(dataframe):
+    """
+    After taxa have been cherry picked out of a dataframe, we want to collapse
+    the rest of the taxa into "other".
+
+    :param dataframe: dataframe of leftovers to consider "other".
+    :return: dataframe with columns: ID, abundance sum, taxonomic level,
+    taxonomic name
+    """
+    # We want to append this result onto something like:
+    #        ID  abundance sum taxonomic level   taxonomic name
+    # 100_LOW12       0.084171           Order  Burkholderiales
+    print(dataframe.head())
+
+    # All we care about is the ID and the abundance sum left.
+    df = dataframe[['ID', 'fraction of reads']]
+    # the groupby sum returns a Pandas series, so we ask for a dataframe:
+    df = pd.DataFrame(df.groupby(['ID'])['fraction of reads'].sum())
+    # Now we have something like
+    #         ID  fraction of reads
+    #  100_LOW12           0.207207
+    #  103_HOW12           0.207381
+
+    # Rename "fraction of reads" to "abundacne sum" to match the results this
+    # dataframe will be appended to.
+    df.rename(columns={'fraction of reads': 'abundance sum'},
+              inplace=True)
+
+    # Attach columns to clarify these are "other" counts.
+    df['taxonomic level'] = "aggregate"
+    df['taxonomic name'] = "other"
+
+    df.reset_index(inplace=True)
+    print(df.head())
+    print(df.head())
+    return df
+
+
+def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./',
+                             summarise_other=True):
     """
     Summarise abundances based on cherry-picked taxonomic abundances,
     perhaps mixed at different levels.
@@ -186,24 +243,39 @@ def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./'):
     and store that result in a list.  Concatenate the lists into one DataFrame
     for return.
 
+    In order to keep track of what has not been cherry picked, we cherry pick
+    out of a copy of the dataframe, deleting those rows after they are used.
+    Then what is left can be lumped into "other".  This also helps (though
+    does not completely solve) the issue of an invalad taxonomy dict being
+    passed as an argument.
+
     :param dataframe: dataframe containing all the data to pick through
     :param taxa_dict: a dictionary with taxonomic levels as keys and
     names as values.  E.g. {'Phylum':['Bacteroidetes'],
     'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
     :param main_dir: directory where the data is stored.  This argument was
     added so jupyter notebooks could be run in a sub-directory.
+    :param summarise_other: include an "other" row per sample?  (or omit)
     :return:
     """
+
+    # Make a copy of the dataframe so we can sum the leftovers into an
+    # "other" category.
+    df = dataframe.copy()
+
     reduced_data = []
     for key in taxa_dict.keys():
         for name in taxa_dict[key]:
-            reduced_rows = sum_on_taxonomy(dataframe=dataframe,
-                                            taxa_level=key,
-                                            name=name)
-
+            # Get one row per week/oxygen condition:
+            reduced_rows = sum_on_taxonomy(dataframe=df,
+                                           taxa_level=key,
+                                           name=name)
             # check that you got some rows.  Might be a typo if not!
             assert(reduced_rows.shape[0] > 0), \
                 'found no rows for {} = "{}"'.format(key, name)
+
+            df = delete_rows_for_taxa(dataframe=df,
+                                      taxa_level=key, taxa_name=name)
 
             # the index needs to be dropped but it is stored below as
             # 'taxonomic level' and 'taxonomic name'
@@ -218,13 +290,36 @@ def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./'):
                      'taxonomic name': name,
                      'abundance sum': reduced_rows['fraction of reads'],
                      'ID': reduced_rows['ID']}))
-    # Concatenate data
-    dataframe = pd.concat(reduced_data)
-    # merge on the sample info.
-    dataframe = pd.merge(left=dataframe,
-                         right=elviz_utils.read_sample_info(main_dir))
+    # Concatenate data included in the taxa_dict
+    # Has form like:
+    #        ID  abundance sum taxonomic level   taxonomic name
+    # 100_LOW12       0.084171           Order  Burkholderiales
+    dataframe_of_keepers = pd.concat(reduced_data)
+    print(dataframe_of_keepers.head())
 
-    return dataframe
+    # Aggregate the leftovers into an "other" column, with headers to match
+    # dataframe_of_keepers
+    # TODO: aggregate into "other"
+    dataframe_of_leftovers = collapse_unused_taxa_into_other(df)
+
+    if summarise_other:
+        # Merge the keepers and the leftovers.
+        result_df = pd.concat([dataframe_of_keepers, dataframe_of_leftovers])
+        print("merged result_df:")
+        print(result_df.head())
+        # merge on the sample info.
+        result_df = pd.merge(left=result_df,
+                             right=elviz_utils.read_sample_info(main_dir))
+        # Check that the sum of abundances for each sample is really close
+        # to 1:
+        sample_sums = result_df.groupby('ID')['abundance sum'].sum()
+        assert (sample_sums > 0.999).all()
+        assert (sample_sums < 1.001).all()
+        print(sample_sums.head())
+    else:
+        result_df = dataframe_of_keepers
+
+    return result_df
 
 
 def taxa_dict_to_descriptive_string(taxa_dict):
@@ -253,7 +348,8 @@ def taxa_dict_to_descriptive_string(taxa_dict):
 
 
 def heatmap_from_taxa_dict(dataframe, taxa_dict,
-                           facet='rep', annotate=True,
+                           facet='rep', annotate=False,
+                           summarise_other=True,
                            main_dir='./',
                            plot_dir='./plots/mixed_taxonomy/',
                            size_spec=False,
@@ -272,8 +368,9 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     so weeks will be the columns.
     :param annotate: print numerical values inside each square?  (Makes big
     plots *really* big; not recommended for default use.
-    :param main_dir: main dir to consier "home", so notebooks can be run in
+    :param main_dir: main dir to consider "home", so notebooks can be run in
     remote directories.
+    :param summarise_other: include a bar for "other"?  (Or just don't show)
     :param plot_dir: path to save plots at, relative to main_dir
     :param size_spec: manually specify the figure size (useful when default
     is ugly)
@@ -285,8 +382,9 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     # todo: What happens if you submit a Genus for something you also
     # submitted an order for???   For now assume the user is smarter than that.
     plot_data = aggregate_mixed_taxonomy(dataframe=dataframe,
-                                          taxa_dict=taxa_dict,
-                                          main_dir=main_dir)
+                                         taxa_dict=taxa_dict,
+                                         main_dir=main_dir,
+                                         summarise_other=summarise_other)
 
     # store the maximum abundance level.  We will need to tell all the
     # sub-heat maps to use this same maximum so they aren't each on their
@@ -414,21 +512,31 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     return g
 
 
-def label_from_taxa_colnames(*args):
+def label_from_taxa_colnames(name_list, taxa_name):
     """
-    Return a string that compresses a list into a string separated by _
+    Return a string that compresses a list of strings into a string
+    separated by ", ".  It skips over names "other" and "unknown".
+
+    Leaves out detail once "other" and "unknown" are hit.
+    So ["Oxalobacteraceae", "other"] --> "Oxalobacteraceae
 
     e.g. ['Burkholderiales', 'Comamonadaceae, 'other'] -->
         'Burkholderiales_Comamonadaceae_other', or
     ['Burkholderiales', NaN, 'other']
 
     :param args: a list
-    :return:
+    :taxa name: level to use for "other" so you get a heatmap label like
+     "other Burkolderiales" instead of "other", which could look like
+     "all other taxa summed"
+
+    :return: a string like or "Burkholderiales, Comamonadaceae",
+     or "other Burkolderiales"
     """
     # TODO: doesn't make sense to use *args for this function, since we only
     #  ever pass one list.  (One list, Right?)
+    # 160524 update: does seem to need to be a *args thing.
     name_string = ""
-    for name in args:
+    for name in name_list:
         if name != 'other':
             if name != 'unknown':
                 # if not math.isnan(name):   #np.isnan(name):
@@ -440,27 +548,26 @@ def label_from_taxa_colnames(*args):
         # print('length of {} is > 0'.format(name_string))
         return name_string[:-2]
     else:
+        # If the string has no length, return 'other'
         # print('all fields empty.  returning "?"')
-        return 'other'
+        return 'other {}'.format(taxa_name)
 
 
-def heatmap_all_below(dataframe, taxa_dict, plot_dir,
-                      main_dir='.', low_cutoff=0.001):
+def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
     """
     Make a heatmap of all the taxa below the taxa specified in taxa_dict.
 
     :param dataframe: dataframe of data to harvest excerpts from
     :param taxa_dict: a dictionary with taxonomic levels as keys and
-    names as values.  E.g. {'Phylum':['Bacteroidetes'],
-    'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
+    names as values.  E.g. {'Order':['Burkholderiales']}
     :param plot_dir: path to save plots to, relative to main_dir
-    :param main_dir: path todata source, etc.
+    :param main_dir: path to data source, etc.
     :param low_cutoff: lowest abundance to include.  A taxa must be above
     this threshold in at least one sample to be included.
     :return:
     """
     # grab the data for that taxa:
-    # for now assume jusst 1 key and 1 value.
+    # for now assume just 1 key and 1 value.
     taxa_level = list(taxa_dict.keys())[0]
     taxa_name = list(taxa_dict.values())[0][0]
     dataframe = dataframe[dataframe[taxa_level] == taxa_name]
@@ -475,19 +582,36 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir,
 
     # make a summary string representing the taxonomy for everything below
 
-    def label_building_lambda(f, columns):
+    def label_building_lambda(f, column_value_list, taxa_name):
         """
         Returns a lambda function to make row labels from.
         :param f: function to make a lambda out of.
         :param columns: column names to pass to function f in the lambda
         :return: function
         """
-        return lambda row: f(*(row[col] for col in columns))
+        # * means unpack the list you get from the list comprehension
+        print("columns passed: {}".format(column_value_list))
+        print("Use those in {}".format(f))
+        # Passing a list into label_from_taxa_colnames().
+        # Doing a list comprehension on columns.
+        # Note that (row[col] for col in columns)) is a generator .
+        # building something like label_from_taxa_colnames()
+        return lambda row: f([row[col] for col in column_value_list],
+                             taxa_name)
+        # e.g. makes:
+        # my_function([Comamonadaceae, Curvibacter]) from a row of a dataframe
+        # and the specification that columns = ['Family', 'Genus']
 
     # TODO: use the taxa_dict to get the columns to use!
+    # make a name_string per row.  It's something like
+    # "Comamonadaceae, Curvibacter" or "other"
     dataframe['name_string'] = dataframe.apply(
         label_building_lambda(f=label_from_taxa_colnames,
-                              columns=label_cols), axis=1)
+                              column_value_list=label_cols,
+                              taxa_name=taxa_name),
+        axis=1)
+    print("dataframe.head() for name_string:")
+    print(dataframe.head())
 
     # reduce to only name_string rows with at least one abundance > the
     # threshold set by low_cutoff to we don't have a zillion rows:
@@ -521,7 +645,7 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir,
         # http://stackoverflow.com/questions/32805267/pandas-pivot-on-multiple-columns-gives-the-truth-value-of-a-dataframe-is-ambigu
         facet_data = pivot_so_columns_are_plotting_variable(
             dataframe=data, groupby=groupby)
-        # Pass kwargs to heatmap  cmap used to be 'Blue'
+        # Pass kwargs to heatmap cmap.
         sns.heatmap(facet_data, cmap="YlGnBu", **kws)
         g.set_xticklabels(rotation=xrotation)
 

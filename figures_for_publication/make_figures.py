@@ -109,7 +109,6 @@ def make_figures():
         dataframe = data_reduced,
         taxa_dict = BURKOLDERIALES,
         plot_dir = './plots/',
-        main_dir = MAIN_DIR,
         low_cutoff = 0.02
     )
 
