@@ -270,7 +270,8 @@ def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./',
     for key in taxa_dict.keys():
         for name in taxa_dict[key]:
             assert (key in df.columns), "column {} doesn't exist!".format(key)
-            assert (name in df[key]), \
+            # Note: to check for a value in a series, use set(Series)
+            assert (name in set(df[key])), \
                 'Value "{}" in column "{}" does not exist. \n' \
                 'Check spelling and conflict with other taxa in the ' \
                 'taxa dict.'.format(name, key)
