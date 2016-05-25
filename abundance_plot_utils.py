@@ -233,7 +233,7 @@ def collapse_unused_taxa_into_other(dataframe):
 
 
 def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./',
-                             summarise_other=True):
+                             summarise_other=True, check_totals_sum_to_1=True):
     """
     Summarise abundances based on cherry-picked taxonomic abundances,
     perhaps mixed at different levels.
@@ -248,6 +248,12 @@ def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./',
     Then what is left can be lumped into "other".  This also helps (though
     does not completely solve) the issue of an invalad taxonomy dict being
     passed as an argument.
+
+    To get an "other" for a given taxonomic level, pass in a DataFrame that
+    is already restricted to the taxonomic level you are looking for
+    (e.g. Methylococcaceae).  Then the taxa you *aren't* picking out will be
+    represented by "other", instead of all other taxa at all other taxonomic
+    levels.
 
     :param dataframe: dataframe containing all the data to pick through
     :param taxa_dict: a dictionary with taxonomic levels as keys and
@@ -333,12 +339,14 @@ def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./',
                              right=elviz_utils.read_sample_info(main_dir))
         # Check that the sum of abundances for each sample is really close
         # to 1:
-        sample_sums = result_df.groupby('ID')['abundance sum'].sum()
-        assert (sample_sums > 0.999).all()
-        assert (sample_sums < 1.001).all()
-        print(sample_sums.head())
+        if check_totals_sum_to_1:
+            sample_sums = result_df.groupby('ID')['abundance sum'].sum()
+            assert (sample_sums > 0.999).all()
+            assert (sample_sums < 1.001).all()
+            print(sample_sums.head())
     else:
-        result_df = dataframe_of_keepers
+        result_df = pd.merge(left=dataframe_of_keepers,
+                             right=elviz_utils.read_sample_info(main_dir))
 
     return result_df
 
@@ -374,7 +382,8 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
                            main_dir='./',
                            plot_dir='./plots/mixed_taxonomy/',
                            size_spec=False,
-                           aspect_spec=False):
+                           aspect_spec=False,
+                           check_totals_sum_to_1=True):
     """
     Make a plot using a taxa_dict.
 
@@ -403,10 +412,12 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     # Cherry pick out the rows for the specified taxa.
     # If you give conflicting taxa as input, aggregate_mixed_taxonomy() will
     # throw an error.
-    plot_data = aggregate_mixed_taxonomy(dataframe=dataframe,
-                                         taxa_dict=taxa_dict,
-                                         main_dir=main_dir,
-                                         summarise_other=summarise_other)
+    plot_data = aggregate_mixed_taxonomy(
+        dataframe=dataframe,
+        taxa_dict=taxa_dict,
+        main_dir=main_dir,
+        summarise_other=summarise_other,
+        check_totals_sum_to_1=check_totals_sum_to_1)
 
     # store the maximum abundance level.  We will need to tell all the
     # sub-heat maps to use this same maximum so they aren't each on their
@@ -475,6 +486,8 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
         size = size_spec
     if aspect_spec:
         aspect = aspect_spec
+
+    print(plot_data.head())
 
     with sns.plotting_context(font_scale=8):
         g = sns.FacetGrid(plot_data,
