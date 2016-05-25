@@ -28,6 +28,7 @@ class testDeleteRowsForTaxa(unittest.TestCase):
         print("unique values left: {}".format(animal_df[taxa_level].unique()))
 
     def test_invalid_taxa_dict(self):
+        # !! Doesn't check for all possible modes of invalidity !!
         # load in the animal dict.
         animal_df = pd.read_csv("./summarised_animals.txt", sep='\t')
         # Use a taxa dict that is invalid:
