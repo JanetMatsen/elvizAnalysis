@@ -1,0 +1,24 @@
+#!/bin/bash
+
+HOST=`mysql_host`
+DB=metagenomes
+
+files=`find ./results -name 'elviz*dat'`
+
+n_files=0
+for file in $files
+do
+	outfile=`echo $file | sed "s/dat/gff/g"`
+	contig_list=`awk '{ printf("\"%s\", ", $1); } END { printf("\"fakevaluethatdoesntexist\""); }' $file`
+	echo $outfile
+	cat << EOF | mysql -s -h $HOST $DB > $outfile
+SELECT sequence, source, feature, start, end, score, strand, phase, attributes FROM gff WHERE sequence IN ($contig_list);
+EOF
+	n_files=$(( $n_files + 1))
+	modulo=$(( $n_files % 100 ))
+	if [ "$modulo" -eq 0 ]
+	then
+			echo processed 100 files
+	fi
+done
+echo processed $n_files files
