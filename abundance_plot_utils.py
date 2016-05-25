@@ -263,6 +263,26 @@ def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./',
     # "other" category.
     df = dataframe.copy()
 
+    # First make sure all of the taxa name, value pairs are valid:
+    # There is a unit test for this in:
+    # unit_tests.test_abundance_plot_utils.
+    # testDeleteRowsForTaxa#test_invalid_taxa_dict
+    for key in taxa_dict.keys():
+        for name in taxa_dict[key]:
+            assert (key in df.columns), "column {} doesn't exist!".format(key)
+            assert (name in df[key]), \
+                'Value "{}" in column "{}" does not exist. \n' \
+                'Check spelling and conflict with other taxa in the ' \
+                'taxa dict.'.format(name, key)
+
+    # TODO: need to start at most general taxonomic level if you want to
+    # check for errors in the taxa dict.
+    # Currently no error will be thrown if you pick a Genera out, then
+    # subsequently select a Family that would have included that Genera.
+    # Also note that if you pass the same key twice in a dict, Python keeps
+    # only the second key:value pair.  E.g.:
+    # print({'Genus': ['Orcinus'], 'Genus': ['ABCD']})
+
     reduced_data = []
     for key in taxa_dict.keys():
         for name in taxa_dict[key]:
@@ -379,8 +399,9 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     :return: saves and returns a seaborn heat map
     """
 
-    # todo: What happens if you submit a Genus for something you also
-    # submitted an order for???   For now assume the user is smarter than that.
+    # Cherry pick out the rows for the specified taxa.
+    # If you give conflicting taxa as input, aggregate_mixed_taxonomy() will
+    # throw an error.
     plot_data = aggregate_mixed_taxonomy(dataframe=dataframe,
                                          taxa_dict=taxa_dict,
                                          main_dir=main_dir,

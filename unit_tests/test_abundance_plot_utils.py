@@ -18,7 +18,7 @@ class testDeleteRowsForTaxa(unittest.TestCase):
         taxa_level = "Species"
         taxa_name = "Orcinus orca"
         # Load the data
-        animal_df = pd.read_csv("./summarised_animals.txt", sep='\t')
+        animal_df = load_animal_data()
         self.assertTrue(taxa_name in animal_df[taxa_level].unique())
 
         # Now remove that taxa and make sure it is gone.
@@ -26,6 +26,27 @@ class testDeleteRowsForTaxa(unittest.TestCase):
         animals, 'Species', 'Orcinus orca')
         self.assertFalse(taxa_name in animal_df[taxa_level].unique())
         print("unique values left: {}".format(animal_df[taxa_level].unique()))
+
+    def test_invalid_taxa_dict(self):
+        # load in the animal dict.
+        animal_df = pd.read_csv("./summarised_animals.txt", sep='\t')
+        # Use a taxa dict that is invalid:
+        # Genus	Species
+        # Orcinus	Orcinus orca
+        invalid_taxa_dict = {'Genus': ['Orcinus'],
+                             'Species': ['Orcinus orca']}
+        # Check that aggregate_mixed_taxonomy fails, which it should because
+        # the values in the taxa dict have overlapping taxa.
+        with self.assertRaises(AssertionError):
+            # If the code below returns the expected assertion,
+            # Python continues on.
+            ag = abundance_plot_utils.aggregate_mixed_taxonomy(
+            dataframe=animal_df, taxa_dict=invalid_taxa_dict,
+            main_dir='../', summarise_other=True)
+            # The resulting df has a row of NaN values.
+            print(ag)
+
+
 
 
 class testAggregateMixedTaxonomy(unittest.TestCase):
