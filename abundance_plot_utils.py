@@ -536,6 +536,7 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
 
     # Format the y strings in each subplot of the Seaborn grid.
     # Don't put () on the function you are c
+    # Todo: make the 2nd argument a function
     y_label_formatter(g, italics_unless_other)
 
 
@@ -636,15 +637,22 @@ def italics_unless_other(name_list):
         formatted_name = ""
         strings = original_name.split(" ")
         print("strings split on the space: {}".format(strings))
-        for s in strings:
+        # Loop over the words in the string.
+        for i, s in enumerate(strings):
             print("single word: {}".format(s))
-            # check for Other and other:
+            # check for Other and other, and don't italicize those.
             if "ther" not in s:
-                #formatted_name += "\textit\{{}\}".format(s)
-                formatted_name += "*{}*".format(s)
+                # "my label" --> "\textit{my label}"
+                formatted_name += r"\textit{" + s + r"}"
             else:
                 # don't italacize "other" or "Other"
                 formatted_name += s
+
+            # manually add back spaces between words
+            formatted_name += " "  # will need to strip off the trailing one.
+
+        # Take off the trailing " " character from the label.
+        formatted_name.rstrip(" ")
         print("{} ---> {}".format(original_name, formatted_name))
         new_name_list.append(formatted_name)
     print("new name list: {}".format(new_name_list))
@@ -804,6 +812,10 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
                         xrotation=90)
 
     g.set_axis_labels('Week')
+
+    # modify labels
+    # Todo: make the 2nd argument a function
+    y_label_formatter(g, italics_unless_other)
 
     # add space for x label
     g.fig.subplots_adjust(bottom=0.2)
