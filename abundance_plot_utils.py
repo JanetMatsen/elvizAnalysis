@@ -535,7 +535,8 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     # Phylum-Bacteroidetes--rep.pdf
 
     # Format the y strings in each subplot of the Seaborn grid.
-    y_label_formatter(g)
+    # Don't put () on the function you are c
+    y_label_formatter(g, toy_italicizer)
 
 
     supertitle = taxa_dict_to_descriptive_string(taxa_dict)
@@ -605,11 +606,20 @@ def label_from_taxa_colnames(name_list, taxa_name):
         return 'other {}'.format(taxa_name)
 
 
-# def italics_unless_other(string):
-#     pass
+def toy_italicizer(name_list):
+    print("run toy_tialicizer on: {}".format(name_list))
+    formatted_name_list = []
+    for i, name in enumerate(name_list):
+        if "ther" in name:
+            formatted_name_list.append(r'\textit{Other!}')
+        else:
+            formatted_name_list.append(name)
+    print('final formatting from toy_italicizer:'
+          ' {}'.format(formatted_name_list))
+    return formatted_name_list
 
 
-def y_label_formatter(seaborn_facetgrid_plot):
+def y_label_formatter(seaborn_facetgrid_plot, name_format_fun):
     #def y_label_formatter(seaborn_facetgrid_plot, string_function):
     # E.g. change all text that doesn't have "other" in it to italics.
     # Try to control y labels:
@@ -620,21 +630,18 @@ def y_label_formatter(seaborn_facetgrid_plot):
         for label in ax.get_yticklabels():
             # print(label)
             if "other" in label.get_text(): #== "other Burkholderiales":
-                label.label = "abcd"
+                # label.label = "abcd"
                 label.set_weight("bold")
-                label.set_color("red")
-                label.set_style('italic')
+                # label.set_color("red")
+                # label.set_style('italic')
 
         # Change the "other" labels to italics for proof of principle.
         # Uses LaTeX, which requires one of a few back-ends.
         # http://stackoverflow.com/questions/11244514/modify-tick-label-text
-        labels = [item.get_text() for item in ax.get_yticklabels()]
-        for i, label in enumerate(labels):
-            if "other" in label:
-                labels[i] = r'\textit{Other!}'
-
+        original_labels = [item.get_text() for item in ax.get_yticklabels()]
+        labels = name_format_fun(original_labels)
+        # use these new labels in the figure.
         ax.set_yticklabels(labels)
-
 
 
 def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
