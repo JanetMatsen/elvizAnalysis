@@ -526,6 +526,10 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     # Order-Burkholderiales_Methylophilales_Methylococcales--
     # Phylum-Bacteroidetes--rep.pdf
 
+    # Format the y strings in each subplot of the Seaborn grid.
+    y_label_formatter(g)
+
+
     # add a supertitle, you bet.
     plt.subplots_adjust(top=0.80)
     supertitle = taxa_dict_to_descriptive_string(taxa_dict)
@@ -588,6 +592,27 @@ def label_from_taxa_colnames(name_list, taxa_name):
         # If the string has no length, return 'other'
         # print('all fields empty.  returning "?"')
         return 'other {}'.format(taxa_name)
+
+
+# def italics_unless_other(string):
+#     pass
+
+
+def y_label_formatter(seaborn_facetgrid_plot):
+    #def y_label_formatter(seaborn_facetgrid_plot, string_function):
+    # E.g. change all text that doesn't have "other" in it to italics.
+    # Try to control y labels:
+    # http://stackoverflow.com/questions/34422944/seaborn-heat-map-customize-a-label
+    g = seaborn_facetgrid_plot
+    print("play with the y labels now!")
+    for ax in g.fig.get_axes():
+        print(ax)
+        for label in ax.get_yticklabels():
+            print(label)
+            if "other" in label.get_text(): #== "other Burkholderiales":
+                label.set_size(13)
+                label.set_weight("bold")
+                label.set_color("red")
 
 
 def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
