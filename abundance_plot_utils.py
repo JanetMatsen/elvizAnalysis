@@ -480,7 +480,7 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
         size = 0.9 + 0.2*num_rows
         aspect = 1.2
         space_for_cbar = 0.85
-        x_axis_label = 'week'
+        x_axis_label = 'Week'
 
     if size_spec:
         size = size_spec
@@ -684,6 +684,14 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
         sns.heatmap(facet_data, cmap="YlGnBu", **kws)
         g.set_xticklabels(rotation=xrotation)
 
+    # set some plotting parameters
+    xrotation = 90
+    # Calculate the size, aspect depending on the number of
+    #  rows per subplot
+    num_rows = len(dataframe['name_string'].unique())
+    size = 0.9 + 0.2*num_rows
+    aspect = 1.2
+
     # todo: this doesn't seem to be changing the font size.  Probably isn't
     # for other plotting calls either!
     with sns.plotting_context(font_scale=40):
@@ -691,8 +699,8 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
                           col='rep',
                           row='oxy',
                           # TODO: adjust size depending on # of unique rows
-                          size=10,
-                          aspect=.5,
+                          size=size,
+                          aspect=aspect,
                           margin_titles=True)
 
     # Add axes for the colorbar.  [left, bottom, width, height]
@@ -705,9 +713,9 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
                         vmax=dataframe['fraction of reads'].max(),
                         annot=False,
                         groupby='week',
-                        xrotation=0)
+                        xrotation=90)
 
-    g.set_axis_labels('week')
+    g.set_axis_labels('Week')
 
     # add space for x label
     g.fig.subplots_adjust(bottom=0.2)
@@ -716,7 +724,7 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
     g.fig.subplots_adjust(right=0.9)
 
     # add a supertitle, you bet.
-    plt.subplots_adjust(top=0.95)
+    plt.subplots_adjust(top=0.80)
     supertitle_base = taxa_dict_to_descriptive_string(taxa_dict)
     supertitle = \
         supertitle_base + '.  Min fraction of reads cutoff = {}'.format(
