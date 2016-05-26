@@ -477,8 +477,8 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
         # Calculate the size, aspect depending on the number of
         #  rows per subplot
         num_rows = len(plot_data['taxonomic name'].unique())
-        size = 0.9 + 0.2*num_rows
-        aspect = 1.2
+        size = 1 + 0.22*num_rows
+        aspect = 1.5  # aspect for each sub-plot, not a single tile
         space_for_cbar = 0.85
         x_axis_label = 'Week'
 
@@ -531,7 +531,9 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     supertitle = taxa_dict_to_descriptive_string(taxa_dict)
     g.fig.suptitle(supertitle, size=16)
 
-    # Also summarise # of taxa rows being grouped together.
+    # Tight layout --> title and cbar overlap heat maps.  Boo.
+    # NO: plt.tight_layout()
+    g.fig.subplots_adjust(wspace=.05, hspace=.05)
 
     # prepare filename and save.
     plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
