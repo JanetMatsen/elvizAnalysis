@@ -107,11 +107,16 @@ BURKOLDERIALES={'Order':['Burkholderiales']}
 PREDATORS={'Order':['Bdellovibrionales', 'Myxococcales']}
 
 
-def make_heatmap_for_major_players(taxa_dict):
-    # load the whole data set.
+def load_data():
     data_reduced = \
         pd.read_csv(MAIN_DIR +
                     "results/reduced_data--all_taxonomy_remains.csv")
+    return data_reduced
+
+
+def make_heatmap_for_major_players(taxa_dict):
+    # load the whole data set.
+    data_reduced = load_data()
 
     # Make plot w/ default settings
     abundance_plot_utils.heatmap_from_taxa_dict(
@@ -127,9 +132,7 @@ def make_heatmap_for_major_players(taxa_dict):
 def make_heatmap_for_particular_family_with_other(family, taxa_dict):
     # for Methylococcaceae, which we want an "other" bar
     # Load all the data
-    data_reduced = \
-        pd.read_csv(MAIN_DIR +
-                    "results/reduced_data--all_taxonomy_remains.csv")
+    data_reduced = load_data()
     # Trim the dataframe to only that family:
     data_for_family = data_reduced[data_reduced['Family']==family]
 
@@ -151,9 +154,8 @@ def heatmap_burkolderiales(taxa_dict):
     # On Burkholderiales, the font is way too small.
     # Maybe we should reduce the number of entries to
     # Acidovorax, Comamonadaceae, other Burkholderiales.
-    data_reduced = \
-        pd.read_csv(MAIN_DIR +
-                    "results/reduced_data--all_taxonomy_remains.csv")
+    data_reduced = load_data()
+
     abundance_plot_utils.heatmap_all_below(
         dataframe = data_reduced,
         taxa_dict = taxa_dict,
@@ -164,9 +166,7 @@ def heatmap_burkolderiales(taxa_dict):
 def make_heatmap_for_predators(taxa_dict):
     # same as for major players, but exclude "other" from heat map.
     # load the whole data set.
-    data_reduced = \
-        pd.read_csv(MAIN_DIR +
-                    "results/reduced_data--all_taxonomy_remains.csv")
+    data_reduced = load_data()
 
     # Make plot w/ default settings
     abundance_plot_utils.heatmap_from_taxa_dict(
