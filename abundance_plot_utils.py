@@ -607,26 +607,6 @@ def label_from_taxa_colnames(name_list, taxa_name):
         return 'other {}'.format(taxa_name)
 
 
-def toy_italicizer(name_list):
-    """
-    This function has absolutely zero function in a real graphic.
-    It only serves as a transition in my efforts to build practical label
-    re-formatting functions.
-    :param name_list: a list of strings
-    :return: a modified list of strings.
-    """
-    print("run toy_tialicizer on: {}".format(name_list))
-    formatted_name_list = []
-    for i, name in enumerate(name_list):
-        if "ther" in name:
-            formatted_name_list.append(r'\textit{Other!}')
-        else:
-            formatted_name_list.append(name)
-    print('final formatting from toy_italicizer:'
-          ' {}'.format(formatted_name_list))
-    return formatted_name_list
-
-
 def italics_unless_other(name_list):
     # Examples:  ["Abcd", "Other Efgh "] -->
     # [r"\textit{Abcd}", r"Other \textit{Efgh}"]
