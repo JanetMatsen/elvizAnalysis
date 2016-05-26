@@ -621,12 +621,16 @@ def italics_unless_other(name_list):
         for i, s in enumerate(strings):
             print("single word: {}".format(s))
             # check for Other and other, and don't italicize those.
-            if "ther" not in s:
-                # "my label" --> "\textit{my label}"
-                formatted_name += r"\textit{" + s + r"}"
-            else:
+            if "ther" in s:
                 # don't italacize "other" or "Other"
                 formatted_name += s
+            elif "iales" in s:
+                # check for "iales", which signifies Genus.
+                # Don't italicize Genus name.
+                formatted_name += s
+            else:
+                # "my label" --> "\textit{my label}"
+                formatted_name += r"\textit{" + s + r"}"
 
             # manually add back spaces between words
             formatted_name += " "  # will need to strip off the trailing one.
