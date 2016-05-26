@@ -15,6 +15,19 @@ import seaborn as sns
 import abundance_plot_utils
 import elviz_utils
 
+# Aesthetics:
+# no titles (J might strip off after it is a PDF)
+# italic for genera and families
+# Capitalize "Other", "Fraction", "Week"
+# Lets say "Replicate", not "rep"
+# "O2", not "oxygen"
+# On some maps, the numbers look fused, can we do something about this?
+# On Burkholderiales, the font is way too small.
+# Maybe we should reduce the number of entries to
+# Acidovorax, Comamonadaceae, other Burkholderiales.
+# Ideally, I would like to put them all on top of each other as panels in
+# one figure, so the size of the font should be the same in all panels.
+
 # Component 1:
 # Methylococcales, Methylophilales and Burkholderiales at the order level
 # Bacteroidetes at the phylum level.
