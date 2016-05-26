@@ -765,8 +765,8 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
     # Calculate the size, aspect depending on the number of
     #  rows per subplot
     num_rows = len(dataframe['name_string'].unique())
-    size = 0.9 + 0.2*num_rows
-    aspect = 1.2
+    size = 1.1 + 0.2*num_rows
+    aspect = 1.3
 
     # todo: this doesn't seem to be changing the font size.  Probably isn't
     # for other plotting calls either!
@@ -801,7 +801,7 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
     g.fig.subplots_adjust(bottom=0.2)
 
     # room for colorbar (cbar)
-    g.fig.subplots_adjust(right=0.9)
+    g.fig.subplots_adjust(right=0.85)
 
     # add a supertitle, you bet.
     plt.subplots_adjust(top=0.80)
