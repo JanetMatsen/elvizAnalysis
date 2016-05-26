@@ -7,6 +7,11 @@ import seaborn as sns
 import abundance_utils
 import elviz_utils
 
+from matplotlib import rc
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+# Need to use LaTeX to get italic fonts.
+rc('text', usetex=True)
+
 
 def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
     """
@@ -606,13 +611,24 @@ def y_label_formatter(seaborn_facetgrid_plot):
     g = seaborn_facetgrid_plot
     print("play with the y labels now!")
     for ax in g.fig.get_axes():
-        print(ax)
         for label in ax.get_yticklabels():
-            print(label)
+            # print(label)
             if "other" in label.get_text(): #== "other Burkholderiales":
-                label.set_size(13)
+                label.label = "abcd"
                 label.set_weight("bold")
                 label.set_color("red")
+                label.set_style('italic')
+
+        # Change the "other" labels to italics for proof of principle.
+        # Uses LaTeX, which requires one of a few back-ends.
+        # http://stackoverflow.com/questions/11244514/modify-tick-label-text
+        labels = [item.get_text() for item in ax.get_yticklabels()]
+        for i, label in enumerate(labels):
+            if "other" in label:
+                labels[i] = r'\textit{Other!}'
+
+        ax.set_yticklabels(labels)
+
 
 
 def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
