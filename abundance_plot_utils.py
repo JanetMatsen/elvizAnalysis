@@ -388,6 +388,7 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
                            facet='rep', annotate=False,
                            summarise_other=True,
                            main_dir='./',
+                           cap_facet_labels=True,
                            plot_dir='./plots/mixed_taxonomy/',
                            size_spec=False,
                            aspect_spec=False,
@@ -480,7 +481,7 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
         space_for_cbar = 0.85
         x_axis_label = 'replicate'
 
-    else:
+    else: # (facet = "rep")
         xrotation = 90
         # Calculate the size, aspect depending on the number of
         #  rows per subplot
@@ -488,7 +489,6 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
         size = 1 + 0.22*num_rows
         aspect = 1.5  # aspect for each sub-plot, not a single tile
         space_for_cbar = 0.85
-        x_axis_label = 'Week'
 
     if size_spec:
         size = size_spec
@@ -497,10 +497,24 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
 
     print(plot_data.head())
 
+    if cap_facet_labels:
+        if facet == "rep":
+            row_var='$O_2$'
+            col_var = 'Week'
+            facet_var = "Replicate"
+        else:
+            print("not set up for facet != rep")
+        plot_data = capitalize_some_column_names(plot_data)
+        col_var
+    else:
+        facet_var = 'rep'
+        row_var = 'oxy'
+        col_var = 'week'
+
     with sns.plotting_context(font_scale=8):
         g = sns.FacetGrid(plot_data,
-                          col=facet,
-                          row='oxy',
+                          col=facet_var,
+                          row=row_var,
                           size=size,
                           aspect=aspect,
                           margin_titles=True)
@@ -514,10 +528,10 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
                         # its own color scale!
                         vmin=0, vmax=max_abundance,
                         annot=annotate,
-                        groupby=cols_in_facet,
+                        groupby=col_var,
                         xrotation=xrotation)
 
-    g.set_axis_labels(x_axis_label)
+    g.set_axis_labels(col_var)
 
     # add space for x label
     g.fig.subplots_adjust(bottom=0.2)
@@ -538,7 +552,6 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     # Don't put () on the function you are c
     # Todo: make the 2nd argument a function
     y_label_formatter(g, italics_unless_other)
-
 
     supertitle = taxa_dict_to_descriptive_string(taxa_dict)
     if title:
@@ -669,6 +682,12 @@ def y_label_formatter(seaborn_facetgrid_plot, name_format_fun):
 
 
 def capitalize_some_column_names(dataframe):
+    """
+    Rename columns as per Mila's preferences.
+
+    :param dataframe: dataframe to modify
+    :return: dataframe with modified column names.
+    """
     if "week" in dataframe.columns:
         dataframe.rename(columns={'week':'Week'}, inplace=True)
     if "oxy" in dataframe.columns:
@@ -693,6 +712,9 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001,
     this threshold in at least one sample to be included.
     :return:
     """
+    # TODO: this function has a lot of commonality with heatmap_from_taxa_dict
+    # and could/should be factored.
+
     # grab the data for that taxa:
     # for now assume just 1 key and 1 value.
     taxa_level = list(taxa_dict.keys())[0]
@@ -786,23 +808,25 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001,
 
     if cap_facet_labels:
         dataframe = capitalize_some_column_names(dataframe)
-        col_var = "Replicate"
+        facet_var = "Replicate"
         row_var='$O_2$'
-        facet_var = "Week"
+        col_var = "Week"
     else:
-        col_var = 'rep'
+        facet_var = 'rep'
         row_var = 'oxy'
-        facet_var = 'week'
+        col_var = 'week'
 
     # todo: this doesn't seem to be changing the font size.  Probably isn't
     # for other plotting calls either!
     with sns.plotting_context(font_scale=40):
         g = sns.FacetGrid(dataframe,
-                          col=col_var,
+                          col=facet_var,
                           row=row_var,
                           size=size,
                           aspect=aspect,
                           margin_titles=True)
+
+    g.set_axis_labels(col_var)
 
     # Add axes for the colorbar.  [left, bottom, width, height]
     cbar_ax = g.fig.add_axes([.94, .3, .02, .4], title='fraction \n of reads')
@@ -813,7 +837,7 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001,
                         # their own color scale and you might not know it.
                         vmax=dataframe['fraction of reads'].max(),
                         annot=False,
-                        groupby=facet_var,
+                        groupby=col_var,
                         xrotation=90)
 
 
