@@ -668,7 +668,19 @@ def y_label_formatter(seaborn_facetgrid_plot, name_format_fun):
         ax.set_yticklabels(labels)
 
 
-def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
+def capitalize_some_column_names(dataframe):
+    if "week" in dataframe.columns:
+        dataframe.rename(columns={'week':'Week'}, inplace=True)
+    if "oxy" in dataframe.columns:
+        dataframe.rename(columns={'oxy': '$O_2$'}, inplace=True)
+    if "rep" in dataframe.columns:
+        dataframe.rename(columns={'rep': 'Replicate'}, inplace=True)
+    return dataframe
+
+
+def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001,
+                      cap_facet_labels=True,
+                      title=False):
     """
     Make a heatmap of all the taxa below the taxa specified in taxa_dict.
 
@@ -769,16 +781,25 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
     # Calculate the size, aspect depending on the number of
     #  rows per subplot
     num_rows = len(dataframe['name_string'].unique())
-    size = 1.1 + 0.2*num_rows
-    aspect = 1.3
+    size = 1 + 0.22*num_rows
+    aspect = 1.5  # a
+
+    if cap_facet_labels:
+        dataframe = capitalize_some_column_names(dataframe)
+        col_var = "Replicate"
+        row_var='$O_2$'
+        facet_var = "Week"
+    else:
+        col_var = 'rep'
+        row_var = 'oxy'
+        facet_var = 'week'
 
     # todo: this doesn't seem to be changing the font size.  Probably isn't
     # for other plotting calls either!
     with sns.plotting_context(font_scale=40):
         g = sns.FacetGrid(dataframe,
-                          col='rep',
-                          row='oxy',
-                          # TODO: adjust size depending on # of unique rows
+                          col=col_var,
+                          row=row_var,
                           size=size,
                           aspect=aspect,
                           margin_titles=True)
@@ -792,10 +813,9 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
                         # their own color scale and you might not know it.
                         vmax=dataframe['fraction of reads'].max(),
                         annot=False,
-                        groupby='week',
+                        groupby=facet_var,
                         xrotation=90)
 
-    g.set_axis_labels('Week')
 
     # modify labels
     # Todo: make the 2nd argument a function
@@ -808,12 +828,13 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001):
     g.fig.subplots_adjust(right=0.85)
 
     # add a supertitle, you bet.
-    plt.subplots_adjust(top=0.80)
     supertitle_base = taxa_dict_to_descriptive_string(taxa_dict)
-    supertitle = \
-        supertitle_base + '.  Min fraction of reads cutoff = {}'.format(
-            low_cutoff)
-    g.fig.suptitle(supertitle, size=15)
+    if title:
+        plt.subplots_adjust(top=0.80)
+        supertitle = \
+            supertitle_base + '.  Min fraction of reads cutoff = {}'.format(
+                low_cutoff)
+        g.fig.suptitle(supertitle, size=15)
 
     # Also summarise # of taxa rows being grouped together.
 
