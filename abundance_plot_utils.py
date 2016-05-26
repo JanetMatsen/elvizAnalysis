@@ -536,7 +536,7 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
 
     # Format the y strings in each subplot of the Seaborn grid.
     # Don't put () on the function you are c
-    y_label_formatter(g, toy_italicizer)
+    y_label_formatter(g, italics_unless_other)
 
 
     supertitle = taxa_dict_to_descriptive_string(taxa_dict)
@@ -607,6 +607,13 @@ def label_from_taxa_colnames(name_list, taxa_name):
 
 
 def toy_italicizer(name_list):
+    """
+    This function has absolutely zero function in a real graphic.
+    It only serves as a transition in my efforts to build practical label
+    re-formatting functions.
+    :param name_list: a list of strings
+    :return: a modified list of strings.
+    """
     print("run toy_tialicizer on: {}".format(name_list))
     formatted_name_list = []
     for i, name in enumerate(name_list):
@@ -617,6 +624,31 @@ def toy_italicizer(name_list):
     print('final formatting from toy_italicizer:'
           ' {}'.format(formatted_name_list))
     return formatted_name_list
+
+
+def italics_unless_other(name_list):
+    # Examples:  ["Abcd", "Other Efgh "] -->
+    # [r"\textit{Abcd}", r"Other \textit{Efgh}"]
+    print(name_list)
+    # lists are ordered  :)
+    new_name_list = []
+    for original_name in name_list:
+        formatted_name = ""
+        strings = original_name.split(" ")
+        print("strings split on the space: {}".format(strings))
+        for s in strings:
+            print("single word: {}".format(s))
+            # check for Other and other:
+            if "ther" not in s:
+                #formatted_name += "\textit\{{}\}".format(s)
+                formatted_name += "*{}*".format(s)
+            else:
+                # don't italacize "other" or "Other"
+                formatted_name += s
+        print("{} ---> {}".format(original_name, formatted_name))
+        new_name_list.append(formatted_name)
+    print("new name list: {}".format(new_name_list))
+    return new_name_list
 
 
 def y_label_formatter(seaborn_facetgrid_plot, name_format_fun):
