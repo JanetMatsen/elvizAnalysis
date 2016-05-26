@@ -22,9 +22,7 @@ import elviz_utils
 # Lets say "Replicate", not "rep"
 # "O2", not "oxygen"
 # On some maps, the numbers look fused, can we do something about this?
-# On Burkholderiales, the font is way too small.
-# Maybe we should reduce the number of entries to
-# Acidovorax, Comamonadaceae, other Burkholderiales.
+
 # Ideally, I would like to put them all on top of each other as panels in
 # one figure, so the size of the font should be the same in all panels.
 
@@ -84,6 +82,10 @@ METHYLOPHILACEAE={'Genus':['Methylotenera', 'Methylophilus']}
 
 # Component 4:
 # Split the order Burkholderiales at the 0.1% cutoff and not go to 100%.
+# 5/25/2016 update:
+# On Burkholderiales, the font is way too small.
+# Maybe we should reduce the number of entries to
+# Acidovorax, Comamonadaceae, other Burkholderiales.
 # -------------------------------------------------------
 # Note: this is about the same as /Users/jmatsen/programming/elvizAnalysis
 # /ipython_notebooks/plots/mixed_taxonomy/Order-Burkholderiales
@@ -145,6 +147,10 @@ def make_heatmap_for_particular_family_with_other(family, taxa_dict):
 
 
 def heatmap_burkolderiales(taxa_dict):
+    # 5/25/2016 update:
+    # On Burkholderiales, the font is way too small.
+    # Maybe we should reduce the number of entries to
+    # Acidovorax, Comamonadaceae, other Burkholderiales.
     data_reduced = \
         pd.read_csv(MAIN_DIR +
                     "results/reduced_data--all_taxonomy_remains.csv")
@@ -152,7 +158,7 @@ def heatmap_burkolderiales(taxa_dict):
         dataframe = data_reduced,
         taxa_dict = taxa_dict,
         plot_dir = './plots/',
-        low_cutoff = 0.02)
+        low_cutoff = 0.04)
 
 
 def make_heatmap_for_predators(taxa_dict):
