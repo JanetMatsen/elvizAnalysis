@@ -114,7 +114,7 @@ def load_data():
     return data_reduced
 
 
-def make_heatmap_for_major_players(taxa_dict):
+def make_heatmap_for_major_players(taxa_dict, make_svg_too):
     # load the whole data set.
     data_reduced = load_data()
 
@@ -126,10 +126,13 @@ def make_heatmap_for_major_players(taxa_dict):
         annotate = False,
         main_dir=MAIN_DIR,
         plot_dir='./plots/',
+        svg=make_svg_too,
         size_spec=False, aspect_spec=False)
 
 
-def make_heatmap_for_particular_family_with_other(family, taxa_dict):
+def make_heatmap_for_particular_family_with_other(family,
+                                                  taxa_dict,
+                                                  make_svg_too):
     # for Methylococcaceae, which we want an "other" bar
     # Load all the data
     data_reduced = load_data()
@@ -146,10 +149,11 @@ def make_heatmap_for_particular_family_with_other(family, taxa_dict):
         plot_dir='./plots/',
         size_spec=False, aspect_spec=False,
         summarise_other=True,  # <-- want an "other" bar for the family.
+        svg=make_svg_too,
         check_totals_sum_to_1=False)  # <-- don't expect col totals to be 1
 
 
-def heatmap_burkolderiales(taxa_dict):
+def heatmap_burkolderiales(taxa_dict, make_svg_too):
     # 5/25/2016 update:
     # On Burkholderiales, the font is way too small.
     # Maybe we should reduce the number of entries to
@@ -160,10 +164,11 @@ def heatmap_burkolderiales(taxa_dict):
         dataframe = data_reduced,
         taxa_dict = taxa_dict,
         plot_dir = './plots/',
+        svg=make_svg_too,
         low_cutoff = 0.04)
 
 
-def make_heatmap_for_predators(taxa_dict):
+def make_heatmap_for_predators(taxa_dict, make_svg_too):
     # same as for major players, but exclude "other" from heat map.
     # load the whole data set.
     data_reduced = load_data()
@@ -177,27 +182,33 @@ def make_heatmap_for_predators(taxa_dict):
         main_dir=MAIN_DIR,
         plot_dir='./plots/',
         size_spec=False, aspect_spec=False,
+        svg=make_svg_too,
         summarise_other=False)  #<--- how to keep the "other" bar off.
 
+
+MAKE_SVG_TOO = True
 
 def make_figures():
     # Make the ./plots/ dir if needed
     elviz_utils.prepare_plot_dir(MAIN_DIR)
 
     # Make figure 1:
-    make_heatmap_for_major_players(MAJOR_PLAYERS)
+    make_heatmap_for_major_players(MAJOR_PLAYERS,
+                                   make_svg_too = MAKE_SVG_TOO)
     # Make figure 2:
     make_heatmap_for_particular_family_with_other(family='Methylophilaceae',
-                                                  taxa_dict=METHYLOPHILACEAE)
+                                                  taxa_dict=METHYLOPHILACEAE,
+                                                  make_svg_too = MAKE_SVG_TOO)
     # Make figure 3:
     make_heatmap_for_particular_family_with_other(family='Methylococcaceae',
-                                                  taxa_dict=METHYLOCOCCACEAE)
+                                                  taxa_dict=METHYLOCOCCACEAE,
+                                                  make_svg_too = MAKE_SVG_TOO)
     # Make figure 4:
     # want a different kind of plot for Burkolderiales:
-    heatmap_burkolderiales(BURKOLDERIALES)
+    heatmap_burkolderiales(BURKOLDERIALES, make_svg_too = MAKE_SVG_TOO)
 
     # Make figure 5:
-    make_heatmap_for_predators(PREDATORS)
+    make_heatmap_for_predators(PREDATORS, make_svg_too = MAKE_SVG_TOO)
 
 
 if __name__ == "__main__":

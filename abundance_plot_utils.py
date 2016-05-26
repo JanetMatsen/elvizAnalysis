@@ -392,7 +392,8 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
                            plot_dir='./plots/mixed_taxonomy/',
                            size_spec=False,
                            aspect_spec=False,
-                           check_totals_sum_to_1=True):
+                           check_totals_sum_to_1=True,
+                           svg=False):
     """
     Make a plot using a taxa_dict.
 
@@ -574,7 +575,8 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     filepath += ".pdf"
     print(filepath)
     g.fig.savefig(filepath)
-    #g.fig.savefig(filepath.rstrip("pdf") + "svg")
+    if svg:
+        g.fig.savefig(filepath.rstrip("pdf") + "svg")
 
     return g
 
@@ -699,7 +701,7 @@ def capitalize_some_column_names(dataframe):
 
 def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001,
                       cap_facet_labels=True,
-                      title=False):
+                      title=False, svg=False):
     """
     Make a heatmap of all the taxa below the taxa specified in taxa_dict.
 
@@ -870,6 +872,9 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001,
     filepath += ".pdf"
     print(filepath)
     g.fig.savefig(filepath)
+
+    if svg:
+        g.fig.savefig(filepath.rstrip("pdf") + "svg")
 
     return g
 
