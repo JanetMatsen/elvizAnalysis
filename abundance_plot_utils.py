@@ -11,6 +11,8 @@ from matplotlib import rc
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 # Need to use LaTeX to get italic fonts.
 rc('text', usetex=True)
+rc('font', family='sans-serif')
+
 
 
 def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
@@ -382,6 +384,7 @@ def taxa_dict_to_descriptive_string(taxa_dict):
 
 
 def heatmap_from_taxa_dict(dataframe, taxa_dict,
+                           title=False,
                            facet='rep', annotate=False,
                            summarise_other=True,
                            main_dir='./',
@@ -535,10 +538,12 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     y_label_formatter(g)
 
 
-    # add a supertitle, you bet.
-    plt.subplots_adjust(top=0.80)
     supertitle = taxa_dict_to_descriptive_string(taxa_dict)
-    g.fig.suptitle(supertitle, size=16)
+    if title:
+        # TODO: they are currently being converted to LaTeX
+        # add a supertitle, you bet.
+        plt.subplots_adjust(top=0.80)
+        g.fig.suptitle(supertitle, size=16)
 
     # Tight layout --> title and cbar overlap heat maps.  Boo.
     # NO: plt.tight_layout()
@@ -554,6 +559,7 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     filepath += ".pdf"
     print(filepath)
     g.fig.savefig(filepath)
+    #g.fig.savefig(filepath.rstrip("pdf") + "svg")
 
     return g
 
