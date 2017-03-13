@@ -3,6 +3,15 @@ import pandas as pd
 import re
 from elviz_utils import IMPORT_DATA_TYPES
 
+def get_elviz_filenames(main_dir):
+    """
+    Return a list of the Elviz filenames
+    :return:
+    """
+    search_dir = os.path.join(main_dir,  'raw_data')
+    elviz_files = [f for f in os.listdir(search_dir) if '.csv' in f]
+    return elviz_files
+
 
 def read_elviz_csv(filename, filepath):
     """
@@ -30,7 +39,7 @@ def read_elviz_csv(filename, filepath):
 def reduce_elviz_to_genus_rpk(df):
     """
     Take in a raw elviz DataFrame and return a Pandas array with a sum
-    of reads per kilobas at the genus level.
+    of reads per kilobase at the genus level.
 
     :param df:
     :return:
