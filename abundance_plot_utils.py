@@ -895,14 +895,112 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001,
 
     return g
 
+def italic_if_not_other(s):
+    if s == 'other':
+        return s
+    else:
+        return '\\textit{' + s + '}'
 
-def plot_dominant_methylotrophs(genera_df, filename, portrait=True):
+
+def bar_facets_from_pivoted_df(not_pivoted_df, plot_x, plot_y, order_list,
+                               color_list, filename=None, portrait=True):
+    """
+    General function to produce faceted plots (O2 vs rep or vice versa)
+    given already-pivotd data.
+
+    :param not_pivoted_df: a dataframe that will be pivoted before plotting
+    :param plot_x: value to use as x in pivot (and plot)
+    :param plot_y: value to use as y (bar rectangle) in pivot and plot
+    :param order_list: order to plot columns by.  Should correspond to color list.
+    :param color_list: list of hex (or RGB?) colors to use
+    :param filename: filename to save the file with
+    :param portrait: True if tall is desired, or False if short
+    :return:
+    """
+    if portrait:
+        fig, axs = plt.subplots(4, 2, figsize=(10,10))
+        axd = axd_portrait(axs)
+    else:
+        fig, axs = plt.subplots(2, 4, figsize=(14,8))
+        axd = axd_landscape(axs)
+
+    for (o2, rep), df in not_pivoted_df.groupby(['oxy', 'rep']):
+        ax = axd[(o2, rep)]
+        ax.set_title('{} oxygen, replicate {}'.format(o2, rep))
+
+        plot_df = df.pivot(index='week', columns=plot_x, values=plot_y)
+        plot_df = plot_df[order_list]
+        plot_df.plot.bar(stacked=True, ax=ax, legend=False, color=color_list)
+
+    if portrait:
+        # prevent subplot overlaps: set width, height to leave between subplots.
+        plt.subplots_adjust(wspace = 0.3, hspace = 0.6)
+        # add legend to the upper right
+        axd[('High', 1)].legend(loc=(1.05, 0))
+    else:
+        # prevent subplot overlaps: set width, height to leave between subplots.
+        plt.subplots_adjust(wspace = 0.3, hspace = 0.5)
+        # add legend to the upper right
+        axd[('Low', 4)].legend(loc=(1.05, 0.2))
+
+    # put labels up the left side.
+    for ax in axs[:, 0]:
+        ax.set_ylabel('fractional abundance')
+
+    if filename is not None:
+        fig.savefig(filename, bbox_inches='tight')
+    return fig
+
+
+def plot_dominant_methylotrophs(genera_df, filename=None, portrait=True):
+    """
+    Plot the key methanotroph and methylotroph abundances by genera.
+    :param genera_df: Dataframe summarised to the genera level
+    :param filename: filename to save picture with
+    :param portrait: True if tall, False if wide.
+    :return: matplotlib figure
+    """
+    # make a copy, for safety.
+    dataframe = genera_df.copy()
 
     order_list = [# methanotrophs:
                   'Methylobacter', 'Methylovulum',
                   'Methylomonas', 'Methylosarcina',
                   # methylotrophs:
                   'Methylophilus','Methylotenera']
+    order_list_italic = ['\\textit{' + G + '}' for G in order_list]
+
+    # Makes all the legend labels italic.
+    dataframe['Genus italics'] = \
+        genera_df['Genus'].apply(italic_if_not_other)
+
+    # specify colors, dark to light.
+    colors = ['#810f7c', '#8856a7', '#8c96c6', '#9ebcda',    # purples
+              '#006d2c', '#74c476'] # greens
+
+    fig = bar_facets_from_pivoted_df(
+        not_pivoted_df=dataframe,
+        plot_x='Genus italics', plot_y='fraction of reads',
+        order_list=order_list_italic, color_list=colors,
+        portrait=True, filename=filename)
+
+    return fig
+
+def bars_from_taxa_dict(dataframe, taxa_dict, colors, filename,
+                        check_totals_sum_to_1=True):
+
+    plot_data = aggregate_mixed_taxonomy(
+    dataframe=dataframe,
+    taxa_dict=taxa_dict,
+    main_dir=main_dir,
+    summarise_other=summarise_other,
+    check_totals_sum_to_1=check_totals_sum_to_1)
+
+
+    # Cherry pick out the rows for the specified taxa.
+    # If you give conflicting taxa as input, aggregate_mixed_taxonomy() will
+    # throw an error.
+
 
     # specify colors, dark to light.
     colors = ['#810f7c', '#8856a7', '#8c96c6', '#9ebcda',    # purples
@@ -918,9 +1016,13 @@ def plot_dominant_methylotrophs(genera_df, filename, portrait=True):
     for (o2, rep), df in genera_df.groupby(['oxy', 'rep']):
         ax = axd[(o2, rep)]
         ax.set_title('{} oxygen, replicate {}'.format(o2, rep))
+
+        # Makes all the legend labels italic.
+        df['Genus'] = '\\textit{' + df['Genus'] + '}'
+
         plot_df = df.pivot(index='week', columns='Genus',
                            values='fraction of reads')
-        plot_df = plot_df[order_list]
+        plot_df = plot_df[order_list_italic]
         plot_df.plot.bar(stacked=True, ax=ax, legend=False, color=colors)
 
     if portrait:
@@ -930,9 +1032,9 @@ def plot_dominant_methylotrophs(genera_df, filename, portrait=True):
         axd[('High', 1)].legend(loc=(1.05, 0))
     else:
         # prevent subplot overlaps: set width, height to leave between subplots.
-        plt.subplots_adjust(wspace = 0.3, hspace = 0.3)
+        plt.subplots_adjust(wspace = 0.3, hspace = 0.5)
         # add legend to the upper right
-        axd[('Low', 4)].legend(loc=(1.05, 0))
+        axd[('Low', 4)].legend(loc=(1.05, 0.2))
 
     # put labels up the left side.
     for ax in axs[:, 0]:
@@ -940,17 +1042,4 @@ def plot_dominant_methylotrophs(genera_df, filename, portrait=True):
 
     fig.savefig(filename, bbox_inches='tight')
     return fig
-
-def bars_from_taxa_dict(dataframe, taxa_dict, filename,
-                        check_totals_sum_to_1=True):
-
-    # Cherry pick out the rows for the specified taxa.
-    # If you give conflicting taxa as input, aggregate_mixed_taxonomy() will
-    # throw an error.
-    plot_data = aggregate_mixed_taxonomy(
-        dataframe=dataframe,
-        taxa_dict=taxa_dict,
-        main_dir=main_dir,
-        summarise_other=summarise_other,
-        check_totals_sum_to_1=check_totals_sum_to_1)
 
