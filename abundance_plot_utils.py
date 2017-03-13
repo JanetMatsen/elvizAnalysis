@@ -878,3 +878,53 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001,
 
     return g
 
+
+def plot_dominant_methylotrophs(genera_df, filename, portrait=True):
+
+    order_list = [# methanotrophs:
+                  'Methylobacter', 'Methylovulum',
+                  'Methylomonas', 'Methylosarcina',
+                  # methylotrophs:
+                  'Methylophilus','Methylotenera']
+
+    # specify colors, dark to light.
+    colors = ['#810f7c', '#8856a7', '#8c96c6', '#9ebcda',    # purples
+              '#006d2c', '#74c476'] # greens
+
+    if portrait:
+        fig, axs = plt.subplots(4, 2, figsize=(10,10))
+        axd = {('Low', 1): axs[0, 0], ('High', 1): axs[0, 1],
+               ('Low', 2): axs[1, 0], ('High', 2): axs[1, 1],
+               ('Low', 3): axs[2, 0], ('High', 3): axs[2, 1],
+               ('Low', 4): axs[3, 0], ('High', 4): axs[3, 1]}
+    else:
+        fig, axs = plt.subplots(2, 4, figsize=(14,8))
+        axd = {('Low', 1): axs[0, 0], ('Low', 2): axs[0, 1], ('Low', 3): axs[0, 2], ('Low', 4): axs[0, 3],
+               ('High', 1): axs[1, 0], ('High', 2): axs[1, 1], ('High', 3): axs[1, 2], ('High', 4): axs[1, 3]}
+
+    for (o2, rep), df in genera_df.groupby(['oxy', 'rep']):
+        ax = axd[(o2, rep)]
+        ax.set_title('{} oxygen, replicate {}'.format(o2, rep))
+        plot_df = df.pivot(index='week', columns='Genus',
+                           values='fraction of reads')
+        plot_df = plot_df[order_list]
+        plot_df.plot.bar(stacked=True, ax=ax, legend=False, color=colors)
+
+    if portrait:
+        # prevent subplot overlaps: set width, height to leave between subplots.
+        plt.subplots_adjust(wspace = 0.3, hspace = 0.6)
+        # add legend to the upper right
+        axd[('High', 1)].legend(loc=(1.05, 0))
+    else:
+        # prevent subplot overlaps: set width, height to leave between subplots.
+        plt.subplots_adjust(wspace = 0.3, hspace = 0.3)
+        # add legend to the upper right
+        axd[('Low', 4)].legend(loc=(1.05, 0))
+
+    # put labels up the left side.
+    for ax in axs[:, 0]:
+        ax.set_ylabel('fractional abundance')
+
+    fig.savefig(filename, bbox_inches='tight')
+    return fig
+
