@@ -14,6 +14,23 @@ rc('text', usetex=True)
 rc('font', family='sans-serif')
 
 
+def axd_portrait(axs):
+    """
+    axis dictionary for portrait pages.
+    """
+    return {('Low', 1): axs[0, 0], ('High', 1): axs[0, 1],
+           ('Low', 2): axs[1, 0], ('High', 2): axs[1, 1],
+           ('Low', 3): axs[2, 0], ('High', 3): axs[2, 1],
+           ('Low', 4): axs[3, 0], ('High', 4): axs[3, 1]}
+
+def axd_landscape(axs):
+    """
+    axis dictionary for landscape pages.
+    """
+    return {('Low', 1): axs[0, 0], ('Low', 2): axs[0, 1], ('Low', 3): axs[0, 2], ('Low', 4): axs[0, 3],
+            ('High', 1): axs[1, 0], ('High', 2): axs[1, 1], ('High', 3): axs[1, 2], ('High', 4): axs[1, 3]}
+
+
 
 def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
     """
@@ -893,14 +910,10 @@ def plot_dominant_methylotrophs(genera_df, filename, portrait=True):
 
     if portrait:
         fig, axs = plt.subplots(4, 2, figsize=(10,10))
-        axd = {('Low', 1): axs[0, 0], ('High', 1): axs[0, 1],
-               ('Low', 2): axs[1, 0], ('High', 2): axs[1, 1],
-               ('Low', 3): axs[2, 0], ('High', 3): axs[2, 1],
-               ('Low', 4): axs[3, 0], ('High', 4): axs[3, 1]}
+        axd = axd_portrait(axs)
     else:
         fig, axs = plt.subplots(2, 4, figsize=(14,8))
-        axd = {('Low', 1): axs[0, 0], ('Low', 2): axs[0, 1], ('Low', 3): axs[0, 2], ('Low', 4): axs[0, 3],
-               ('High', 1): axs[1, 0], ('High', 2): axs[1, 1], ('High', 3): axs[1, 2], ('High', 4): axs[1, 3]}
+        axd = axd_landscape(axs)
 
     for (o2, rep), df in genera_df.groupby(['oxy', 'rep']):
         ax = axd[(o2, rep)]
@@ -927,4 +940,17 @@ def plot_dominant_methylotrophs(genera_df, filename, portrait=True):
 
     fig.savefig(filename, bbox_inches='tight')
     return fig
+
+def bars_from_taxa_dict(dataframe, taxa_dict, filename,
+                        check_totals_sum_to_1=True):
+
+    # Cherry pick out the rows for the specified taxa.
+    # If you give conflicting taxa as input, aggregate_mixed_taxonomy() will
+    # throw an error.
+    plot_data = aggregate_mixed_taxonomy(
+        dataframe=dataframe,
+        taxa_dict=taxa_dict,
+        main_dir=main_dir,
+        summarise_other=summarise_other,
+        check_totals_sum_to_1=check_totals_sum_to_1)
 
