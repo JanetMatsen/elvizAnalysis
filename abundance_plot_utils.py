@@ -1,3 +1,4 @@
+import itertools
 import math
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -45,6 +46,9 @@ def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
     :param plot_dir: directory to save plots in.
     :return:
     """
+    # Correction: 'other' should be 'other and unknown'
+    dataframe.ix[dataframe['Genus'] == 'other', 'Genus'] = r'other \& unknown'
+
     # get rid of oxygen levels and replicates if specified.
     if oxy is not 'all':
         print("keep only {} oxygen samples".format(oxy))
@@ -107,7 +111,7 @@ def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
 
     # add a supertitle, you bet.
     plt.subplots_adjust(top=0.80)
-    supertitle = str(low) + ' < fraction of reads < ' + str(
+    supertitle = str(low) + r' $<$ fraction of reads $<$ ' + str(
         high) + ', {} oxygen'.format(oxy)
     g.fig.suptitle(supertitle, size=18)
 
@@ -248,7 +252,7 @@ def collapse_unused_taxa_into_other(dataframe):
 
     # Attach columns to clarify these are "other" counts.
     df['taxonomic level'] = "aggregate"
-    df['taxonomic name'] = "other"
+    df['taxonomic name'] = r"unknown \& other"
 
     df.reset_index(inplace=True)
     print(df.head())
@@ -257,7 +261,7 @@ def collapse_unused_taxa_into_other(dataframe):
 
 
 def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./',
-                             summarise_other=True, check_totals_sum_to_1=True):
+                             summarize_other=True, check_totals_sum_to_1=True):
     """
     Summarise abundances based on cherry-picked taxonomic abundances,
     perhaps mixed at different levels.
@@ -285,7 +289,7 @@ def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./',
     'Order':['Burkholderiales','Methylophilales', 'Methylococcales']}
     :param main_dir: directory where the data is stored.  This argument was
     added so jupyter notebooks could be run in a sub-directory.
-    :param summarise_other: include an "other" row per sample?  (or omit)
+    :param summarize_other: include an "other" row per sample?  (or omit)
     :return:
     """
 
@@ -353,11 +357,11 @@ def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./',
     # TODO: aggregate into "other"
     dataframe_of_leftovers = collapse_unused_taxa_into_other(df)
 
-    if summarise_other:
+    if summarize_other:
         # Merge the keepers and the leftovers.
         result_df = pd.concat([dataframe_of_keepers, dataframe_of_leftovers])
-        print("merged result_df:")
-        print(result_df.head())
+        #print("merged result_df:")
+        #print(result_df.head())
         # merge on the sample info.
         result_df = pd.merge(left=result_df,
                              right=elviz_utils.read_sample_info(main_dir))
@@ -403,7 +407,7 @@ def taxa_dict_to_descriptive_string(taxa_dict):
 def heatmap_from_taxa_dict(dataframe, taxa_dict,
                            title=False,
                            facet='rep', annotate=False,
-                           summarise_other=True,
+                           summarize_other=True,
                            main_dir='./',
                            cap_facet_labels=True,
                            plot_dir='./plots/mixed_taxonomy/',
@@ -415,7 +419,7 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     Make a plot using a taxa_dict.
 
     The taxa_dict is used to make a summary dataframe using
-    aggregate_mixed_taxonomy(), and the reult is plotted.
+    aggregate_mixed_taxonomy(), and the result is plotted.
 
     :param dataframe: dataframe to source all data from
     :param taxa_dict: a dictionary with taxonomic levels as keys and
@@ -427,7 +431,7 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
     plots *really* big; not recommended for default use.
     :param main_dir: main dir to consider "home", so notebooks can be run in
     remote directories.
-    :param summarise_other: include a bar for "other"?  (Or just don't show)
+    :param summarize_other: include a bar for "other"?  (Or just don't show)
     :param plot_dir: path to save plots at, relative to main_dir
     :param size_spec: manually specify the figure size (useful when default
     is ugly)
@@ -443,7 +447,7 @@ def heatmap_from_taxa_dict(dataframe, taxa_dict,
         dataframe=dataframe,
         taxa_dict=taxa_dict,
         main_dir=main_dir,
-        summarise_other=summarise_other,
+        summarize_other=summarize_other,
         check_totals_sum_to_1=check_totals_sum_to_1)
 
     # store the maximum abundance level.  We will need to tell all the
@@ -652,8 +656,8 @@ def italics_unless_other(name_list):
         # Loop over the words in the string.
         for i, s in enumerate(strings):
             print("single word: {}".format(s))
-            # check for Other and other, and don't italicize those.
-            if "ther" in s:
+            # check for Other and other, unknown, and don't italicize those.
+            if "ther" in s or 'nknown':
                 # don't italacize "other" or "Other"
                 formatted_name += s
             elif "iales" in s:
@@ -879,7 +883,7 @@ def heatmap_all_below(dataframe, taxa_dict, plot_dir, low_cutoff=0.001,
                 low_cutoff)
         g.fig.suptitle(supertitle, size=15)
 
-    # Also summarise # of taxa rows being grouped together.
+    # Also summarize # of taxa rows being grouped together.
 
     # prepare filename and save.
     plot_dir = elviz_utils.prepare_plot_dir(plot_dir)
@@ -955,7 +959,7 @@ def bar_facets_from_pivoted_df(not_pivoted_df, plot_x, plot_y, order_list,
 def plot_dominant_methylotrophs(genera_df, filename=None, portrait=True):
     """
     Plot the key methanotroph and methylotroph abundances by genera.
-    :param genera_df: Dataframe summarised to the genera level
+    :param genera_df: Dataframe summarized to the genera level
     :param filename: filename to save picture with
     :param portrait: True if tall, False if wide.
     :return: matplotlib figure
@@ -986,60 +990,28 @@ def plot_dominant_methylotrophs(genera_df, filename=None, portrait=True):
 
     return fig
 
-def bars_from_taxa_dict(dataframe, taxa_dict, colors, filename,
-                        check_totals_sum_to_1=True):
+def plot_bars_for_taxa_dict(dataframe, taxa_dict, order_list,
+                            colors, filename, main_dir,
+                            summarize_other=True, check_totals_sum_to_1=True):
 
     plot_data = aggregate_mixed_taxonomy(
-    dataframe=dataframe,
-    taxa_dict=taxa_dict,
-    main_dir=main_dir,
-    summarise_other=summarise_other,
-    check_totals_sum_to_1=check_totals_sum_to_1)
+        dataframe=dataframe,
+        taxa_dict=taxa_dict,
+        main_dir=main_dir,
+        summarize_other=summarize_other,
+        check_totals_sum_to_1=check_totals_sum_to_1)
+    # todo: move this into abundance utils and out of jupyter/.py:
+    x = 'taxonomic name'
+    y = 'abundance sum'
+    plot_data.ix[plot_data[x] == 'other', x] = r'other \& unknown'
+    print(plot_data['taxonomic name'].drop_duplicates())
 
+    fig = bar_facets_from_pivoted_df(
+        not_pivoted_df=plot_data,
+        plot_x=x, plot_y=y,
+        order_list=order_list, color_list=colors,
+        portrait=True, filename=filename)
 
-    # Cherry pick out the rows for the specified taxa.
-    # If you give conflicting taxa as input, aggregate_mixed_taxonomy() will
-    # throw an error.
-
-
-    # specify colors, dark to light.
-    colors = ['#810f7c', '#8856a7', '#8c96c6', '#9ebcda',    # purples
-              '#006d2c', '#74c476'] # greens
-
-    if portrait:
-        fig, axs = plt.subplots(4, 2, figsize=(10,10))
-        axd = axd_portrait(axs)
-    else:
-        fig, axs = plt.subplots(2, 4, figsize=(14,8))
-        axd = axd_landscape(axs)
-
-    for (o2, rep), df in genera_df.groupby(['oxy', 'rep']):
-        ax = axd[(o2, rep)]
-        ax.set_title('{} oxygen, replicate {}'.format(o2, rep))
-
-        # Makes all the legend labels italic.
-        df['Genus'] = '\\textit{' + df['Genus'] + '}'
-
-        plot_df = df.pivot(index='week', columns='Genus',
-                           values='fraction of reads')
-        plot_df = plot_df[order_list_italic]
-        plot_df.plot.bar(stacked=True, ax=ax, legend=False, color=colors)
-
-    if portrait:
-        # prevent subplot overlaps: set width, height to leave between subplots.
-        plt.subplots_adjust(wspace = 0.3, hspace = 0.6)
-        # add legend to the upper right
-        axd[('High', 1)].legend(loc=(1.05, 0))
-    else:
-        # prevent subplot overlaps: set width, height to leave between subplots.
-        plt.subplots_adjust(wspace = 0.3, hspace = 0.5)
-        # add legend to the upper right
-        axd[('Low', 4)].legend(loc=(1.05, 0.2))
-
-    # put labels up the left side.
-    for ax in axs[:, 0]:
-        ax.set_ylabel('fractional abundance')
-
-    fig.savefig(filename, bbox_inches='tight')
     return fig
+
 
