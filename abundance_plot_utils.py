@@ -24,6 +24,7 @@ def axd_portrait(axs):
            ('Low', 3): axs[2, 0], ('High', 3): axs[2, 1],
            ('Low', 4): axs[3, 0], ('High', 4): axs[3, 1]}
 
+
 def axd_landscape(axs):
     """
     axis dictionary for landscape pages.
@@ -31,6 +32,12 @@ def axd_landscape(axs):
     return {('Low', 1): axs[0, 0], ('Low', 2): axs[0, 1], ('Low', 3): axs[0, 2], ('Low', 4): axs[0, 3],
             ('High', 1): axs[1, 0], ('High', 2): axs[1, 1], ('High', 3): axs[1, 2], ('High', 4): axs[1, 3]}
 
+
+def add_vline_to_all_subplots(fig, x, ymin, ymax, color='#636363'):
+    for ax in fig.axes:
+        # It counts the x positions from 1, not from 4.
+        ax.axvline(x=x, ymin=ymin, ymax=ymax, color=color)
+    return fig
 
 
 def plot_heatmap_genus(dataframe, high, low, oxy, rep, plot_dir):
@@ -943,7 +950,7 @@ def bar_facets_from_pivoted_df(not_pivoted_df, plot_x, plot_y, order_list,
         axd[('High', 1)].legend(loc=(1.05, 0))
     else:
         # prevent subplot overlaps: set width, height to leave between subplots.
-        plt.subplots_adjust(wspace = 0.3, hspace = 0.5)
+        plt.subplots_adjust(wspace = 0.3, hspace = 0.3)
         # add legend to the upper right
         axd[('Low', 4)].legend(loc=(1.05, 0.2))
 
@@ -951,10 +958,7 @@ def bar_facets_from_pivoted_df(not_pivoted_df, plot_x, plot_y, order_list,
     for ax in axs[:, 0]:
         ax.set_ylabel('fractional abundance')
 
-    if filename is not None:
-        fig.savefig(filename, bbox_inches='tight')
     return fig
-
 
 def plot_dominant_methylotrophs(genera_df, filename=None, portrait=True):
     """
@@ -986,12 +990,17 @@ def plot_dominant_methylotrophs(genera_df, filename=None, portrait=True):
         not_pivoted_df=dataframe,
         plot_x='Genus italics', plot_y='fraction of reads',
         order_list=order_list_italic, color_list=colors,
-        portrait=True, filename=filename)
+        portrait=portrait, filename=filename)
+    fig = add_vline_to_all_subplots(fig, x=10.5-4, ymin=0, ymax=1, color='#636363')
+
+    if filename is not None:
+        fig.savefig(filename, bbox_inches='tight')
 
     return fig
 
+
 def plot_bars_for_taxa_dict(dataframe, taxa_dict, order_list,
-                            colors, filename, main_dir,
+                            colors, filename, main_dir, portrait=True,
                             summarize_other=True, check_totals_sum_to_1=True):
 
     plot_data = aggregate_mixed_taxonomy(
@@ -1010,8 +1019,12 @@ def plot_bars_for_taxa_dict(dataframe, taxa_dict, order_list,
         not_pivoted_df=plot_data,
         plot_x=x, plot_y=y,
         order_list=order_list, color_list=colors,
-        portrait=True, filename=filename)
+        portrait=portrait, filename=filename)
+
+    fig = add_vline_to_all_subplots(fig, x=10.5-4, ymin=0, ymax=1, color='#636363')
+
+    if filename is not None:
+        fig.savefig(filename, bbox_inches='tight')
 
     return fig
-
 
