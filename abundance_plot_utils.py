@@ -151,7 +151,7 @@ def subset_on_taxonomy(dataframe, taxa_level, name):
     :param name: taxa_level name to match
     :return: subset of Pandas DataFrame matching the selection
     """
-    print(dataframe.columns)
+    #print(dataframe.columns)
     return dataframe[dataframe[taxa_level] == name]
 
 
@@ -249,7 +249,7 @@ def collapse_unused_taxa_into_other(dataframe):
     # We want to append this result onto something like:
     #        ID  abundance sum taxonomic level   taxonomic name
     # 100_LOW12       0.084171           Order  Burkholderiales
-    print(dataframe.head())
+    #print(dataframe.head())
 
     # All we care about is the ID and the abundance sum left.
     df = dataframe[['ID', 'fraction of reads']]
@@ -270,8 +270,7 @@ def collapse_unused_taxa_into_other(dataframe):
     df['taxonomic name'] = r"unknown \& other"
 
     df.reset_index(inplace=True)
-    print(df.head())
-    print(df.head())
+    #print(df.head())
     return df
 
 
@@ -365,7 +364,7 @@ def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./',
     #        ID  abundance sum taxonomic level   taxonomic name
     # 100_LOW12       0.084171           Order  Burkholderiales
     dataframe_of_keepers = pd.concat(reduced_data)
-    print(dataframe_of_keepers.head())
+    #print(dataframe_of_keepers.head())
 
     # Aggregate the leftovers into an "other" column, with headers to match
     # dataframe_of_keepers
@@ -386,7 +385,7 @@ def aggregate_mixed_taxonomy(dataframe, taxa_dict, main_dir='./',
             sample_sums = result_df.groupby('ID')['abundance sum'].sum()
             assert (sample_sums > 0.999).all()
             assert (sample_sums < 1.001).all()
-            print(sample_sums.head())
+            #print(sample_sums.head())
     else:
         result_df = pd.merge(left=dataframe_of_keepers,
                              right=elviz_utils.read_sample_info(main_dir))
@@ -672,7 +671,7 @@ def italics_unless_other(name_list):
         for i, s in enumerate(strings):
             print("single word: {}".format(s))
             # check for Other and other, unknown, and don't italicize those.
-            if "ther" in s or 'nknown':
+            if "ther" in s or 'nknown' in s:
                 # don't italacize "other" or "Other"
                 formatted_name += s
             elif "iales" in s:
@@ -945,7 +944,7 @@ def bar_facets_from_pivoted_df(not_pivoted_df, plot_x, plot_y, order_list,
 
     for (o2, rep), df in not_pivoted_df.groupby(['oxy', 'rep']):
         ax = axd[(o2, rep)]
-        ax.set_title('{} oxygen, replicate {}'.format(o2, rep))
+        ax.set_title(o2.lower() + ' $\mathrm{O_2}$' + ' replicate {}'.format(rep))
 
         plot_df = df.pivot(index='week', columns=plot_x, values=plot_y)
         plot_df = plot_df[order_list]
@@ -1021,7 +1020,7 @@ def plot_bars_for_taxa_dict(dataframe, taxa_dict, order_list,
     x = 'taxonomic name'
     y = 'abundance sum'
     plot_data.ix[plot_data[x] == 'other', x] = r'other \& unknown'
-    print(plot_data['taxonomic name'].drop_duplicates())
+    #print(plot_data['taxonomic name'].drop_duplicates())
 
     fig = bar_facets_from_pivoted_df(
         not_pivoted_df=plot_data,
