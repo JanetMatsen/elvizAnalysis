@@ -939,7 +939,7 @@ def bar_facets_from_pivoted_df(not_pivoted_df, plot_x, plot_y, order_list,
         fig, axs = plt.subplots(4, 2, figsize=(10,10), sharex=True, sharey=True)
         axd = axd_portrait(axs)
     else:
-        fig, axs = plt.subplots(2, 4, figsize=(14,8), sharex=True, sharey=True)
+        fig, axs = plt.subplots(2, 4, figsize=(10,6), sharex=True, sharey=True)
         axd = axd_landscape(axs)
 
     for (o2, rep), df in not_pivoted_df.groupby(['oxy', 'rep']):
@@ -952,12 +952,12 @@ def bar_facets_from_pivoted_df(not_pivoted_df, plot_x, plot_y, order_list,
 
     if portrait:
         # prevent subplot overlaps: set width, height to leave between subplots.
-        plt.subplots_adjust(wspace = 0.3, hspace = 0.6)
+        plt.subplots_adjust(wspace = 0.1, hspace = 0.4)
         # add legend to the upper right
         axd[('High', 1)].legend(loc=(1.05, 0))
     else:
         # prevent subplot overlaps: set width, height to leave between subplots.
-        plt.subplots_adjust(wspace = 0.3, hspace = 0.3)
+        plt.subplots_adjust(wspace = 0.15, hspace = 0.2)
         # add legend to the upper right
         axd[('Low', 4)].legend(loc=(1.05, 0.2))
 
