@@ -11,3 +11,6 @@ ipython_notebooks/depreciated/
 ipython_notebooks/plots/
 ipython_notebooks/.plots/
 plots/
+
+results/4_major_group_abundances.tsv
+results/Methylococcales_and_Methylophilales_abundances.tsv
